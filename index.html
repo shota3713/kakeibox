@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家計簿</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;
+  --income:#3DCAB1;--expense:#EF4444;--balance:#9CA3AF;--center:#374151;
+  --nav:#1e293b;--navfg:#f8fafc;--r:12px;--sh:0 1px 6px rgba(0,0,0,.1);
+}
+body{font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Meiryo',sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:100;background:var(--nav);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:52px;box-shadow:0 2px 8px rgba(0,0,0,.25);gap:12px}
+.nav-brand{font-size:15px;font-weight:700;color:var(--navfg);white-space:nowrap}
+.nav-center{display:flex;align-items:center;gap:6px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nb{background:rgba(255,255,255,.13);border:none;border-radius:6px;color:var(--navfg);
+  width:28px;height:28px;cursor:pointer;font-size:16px;display:flex;align-items:center;
+  justify-content:center;transition:background .15s;flex-shrink:0}
+.nb:hover{background:rgba(255,255,255,.24)}
+.nsel{background:rgba(255,255,255,.13);border:none;border-radius:6px;color:var(--navfg);
+  padding:4px 8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+  outline:none;-webkit-appearance:none;appearance:none}
+.nsel option{background:#1e293b;color:#f8fafc}
+.psel{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);
+  border-radius:6px;color:var(--navfg);padding:5px 10px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit;outline:none}
+.psel option{background:#1e293b;color:#f8fafc}
+.btn-np{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);
+  border-radius:6px;color:var(--navfg);padding:5px 10px;font-size:12px;font-weight:600;
+  cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-np:hover{background:rgba(255,255,255,.22)}
+/* hide month-sel in annual view */
+.hide-monthly{display:none !important}
+
+/* ── VIEW TABS ── */
+.vtab-bar{background:var(--card);border-bottom:1px solid var(--border);
+  display:flex;padding:0 20px;gap:0}
+.vtab{padding:10px 20px;font-size:13px;font-weight:700;border:none;background:transparent;
+  cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;
+  font-family:inherit;transition:all .15s}
+.vtab.on{color:var(--income);border-bottom-color:var(--income)}
+
+/* ── MAIN ── */
+.wrap{max-width:1120px;margin:0 auto;padding:22px 16px 60px}
+
+/* ── SUMMARY ── */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+.sum-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:700px){.sum-grid4{grid-template-columns:1fr 1fr}}
+.sum-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);
+  padding:16px 22px;border-left:4px solid transparent}
+.sum-card.si{border-color:var(--income)}.sum-card.se{border-color:var(--expense)}
+.sum-card.sb{border-color:var(--balance)}.sum-card.sc{border-color:#0284c7}
+.sum-lbl{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--muted);
+  margin-bottom:4px;text-transform:uppercase}
+.sum-val{font-size:24px;font-weight:700}
+.sum-card.si .sum-val{color:var(--income)}.sum-card.se .sum-val{color:var(--expense)}
+.sum-card.sb .sum-val{color:var(--balance)}.sum-card.sc .sum-val{color:#0284c7}
+
+/* ── TABLES ── */
+.tbl-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media(max-width:640px){.tbl-grid,.sum-grid{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:18px 20px}
+.card-head{font-size:13px;font-weight:700;border:2px solid var(--text);border-radius:4px;
+  text-align:center;padding:6px 8px;background:#f8fafc}
+table.bt{width:100%;border-collapse:collapse}
+table.bt th{font-size:12px;font-weight:700;padding:7px 8px;border:1px solid var(--border);background:#f8fafc;text-align:left}
+table.bt td{font-size:13px;padding:5px 7px;border:1px solid #eef0f3;vertical-align:middle}
+table.bt tr:hover td{background:#f8fafc}
+table.bt td input{border:none;outline:none;width:100%;font-size:13px;font-family:inherit;background:transparent}
+table.bt td input:focus{background:#eff6ff;border-radius:2px}
+.td-a{width:108px;text-align:right}.td-a input{text-align:right}.td-x{width:24px;text-align:center}
+.tr-tot td{font-weight:700;background:#f8fafc;border-top:2px solid var(--text)}
+.btn-x{background:none;border:none;cursor:pointer;color:#fca5a5;font-size:13px;padding:1px 3px}
+.btn-x:hover{color:var(--expense)}
+.btn-pin{background:none;border:none;cursor:pointer;font-size:11px;padding:1px 4px;color:#cbd5e1;transition:color .15s;line-height:1}
+.btn-pin.on{color:#f59e0b}.btn-pin:hover{color:#f59e0b}
+.tr-recur td:first-child{border-left:3px solid #f59e0b !important}
+.action-bar{display:flex;justify-content:flex-end;margin-bottom:10px;gap:8px}
+.btn-action{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--muted);
+  padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-action:hover{border-color:var(--income);color:var(--income)}
+.btn-add{width:100%;margin-top:8px;padding:7px;border:1px dashed #94a3b8;border-radius:8px;
+  cursor:pointer;font-size:12px;color:var(--muted);background:transparent;font-family:inherit;transition:all .2s}
+.btn-add:hover{background:#eff6ff;border-color:var(--income);color:var(--income)}
+
+/* ── SANKEY ── */
+.sk-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:22px 22px 26px}
+.sk-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.sk-top h2{font-size:15px;font-weight:700}
+.mode-wrap{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.mode-btn{padding:5px 13px;font-size:12px;font-weight:600;border:none;cursor:pointer;
+  background:transparent;font-family:inherit;color:var(--muted);transition:all .15s}
+.mode-btn.on{background:var(--income);color:#fff}
+
+/* ── CHARTS (annual view) ── */
+.chart-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);
+  padding:20px 22px;margin-bottom:18px}
+.chart-head{font-size:14px;font-weight:700;margin-bottom:10px}
+.chart-sub{font-size:12px;color:var(--muted);margin-top:2px;margin-bottom:10px}
+.chart2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media(max-width:640px){.chart2{grid-template-columns:1fr}}
+.no-data{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+/* D3 axis */
+.domain{display:none}
+.tick line{stroke:#e2e8f0}
+.tick text{font-size:11px;fill:var(--muted);font-family:inherit}
+
+/* ── LEGEND ── */
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:#374151}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;
+  align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity .2s}
+.ov.open{opacity:1;pointer-events:all}
+.mbox{background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);
+  padding:22px 24px;width:420px;max-width:95vw;transform:translateY(8px);transition:transform .2s}
+.ov.open .mbox{transform:translateY(0)}
+.m-title{font-size:14px;font-weight:700;margin-bottom:12px}
+.m-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.chip{padding:5px 12px;border:1px solid var(--border);border-radius:20px;cursor:pointer;
+  font-size:12px;font-family:inherit;background:#f8fafc;color:var(--text);transition:all .15s}
+.chip:hover{background:var(--income);border-color:var(--income);color:#fff}
+.m-hr{border:none;border-top:1px solid var(--border);margin:12px 0}
+.m-row{display:flex;gap:7px}
+.m-inp{flex:1;padding:8px 11px;border:1px solid var(--border);border-radius:8px;
+  font-size:13px;font-family:inherit;outline:none}
+.m-inp:focus{border-color:var(--income)}
+.m-ok,.m-close{padding:8px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;border:none}
+.m-ok{background:var(--income);color:#fff}.m-ok:hover{background:#1e40af}
+.m-close{background:#f1f5f9;color:var(--muted);margin-top:12px;width:100%}
+.m-close:hover{background:#e2e8f0}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 16px;background:#fff;border:1.5px solid #dadce0;border-radius:8px;font-size:14px;font-weight:600;color:#3c4043;cursor:pointer;font-family:inherit;transition:background .15s,box-shadow .15s}
+.btn-google:hover{background:#f8f9fa;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.btn-google:disabled{opacity:.6;cursor:not-allowed}
+
+/* ── TOOLTIP ── */
+#tt{position:fixed;background:rgba(15,23,42,.93);color:#fff;padding:8px 13px;
+  border-radius:8px;font-size:12px;pointer-events:none;z-index:9999;
+  opacity:0;transition:opacity .15s;line-height:1.6;max-width:220px}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<header class="nav">
+  <div class="nav-brand">💰 家計簿</div>
+  <div class="nav-center">
+    <button class="nb" id="btn-prev">&#8249;</button>
+    <select class="nsel" id="sel-y"></select>
+    <select class="nsel" id="sel-m"></select>
+    <button class="nb" id="btn-next">&#8250;</button>
+  </div>
+  <div class="nav-right">
+    <select class="psel" id="sel-p"></select>
+    <button class="btn-np" id="btn-np">＋ 人物</button>
+    <div id="auth-area"></div>
+  </div>
+</header>
+
+<!-- ── VIEW TABS ── -->
+<div class="vtab-bar">
+  <button class="vtab on" id="vt-m" onclick="setView('monthly')">月次</button>
+  <button class="vtab"    id="vt-a" onclick="setView('annual')">📊 年間レポート</button>
+</div>
+
+<!-- ══ MONTHLY VIEW ══ -->
+<div id="view-monthly" class="wrap">
+  <div class="sum-grid">
+    <div class="sum-card si"><div class="sum-lbl">収入総額</div><div class="sum-val" id="v-income">¥0</div></div>
+    <div class="sum-card se"><div class="sum-lbl">支出総額</div><div class="sum-val" id="v-expense">¥0</div></div>
+    <div class="sum-card sb"><div class="sum-lbl">収支</div><div class="sum-val" id="v-balance">¥0</div></div>
+  </div>
+  <div class="action-bar">
+    <button class="btn-action" onclick="copyPrevMonth()">📋 前月からコピー</button>
+  </div>
+  <div class="tbl-grid">
+    <div class="card">
+      <div class="card-head">収入内訳</div>
+      <table class="bt"><thead><tr><th>名目</th><th class="td-a">収入額</th><th class="td-x"></th><th class="td-x" title="繰り返し登録"></th></tr></thead>
+        <tbody id="tb-i"></tbody>
+        <tfoot><tr class="tr-tot"><td>合計</td><td class="td-a" id="ft-i">¥0</td><td></td></tr></tfoot>
+      </table>
+      <button class="btn-add" onclick="openModal('income')">＋ 収入を追加</button>
+    </div>
+    <div class="card">
+      <div class="card-head">支出内訳</div>
+      <table class="bt"><thead><tr><th>名目</th><th class="td-a">支出額</th><th class="td-x"></th><th class="td-x" title="繰り返し登録"></th></tr></thead>
+        <tbody id="tb-e"></tbody>
+        <tfoot><tr class="tr-tot"><td>合計</td><td class="td-a" id="ft-e">¥0</td><td></td></tr></tfoot>
+      </table>
+      <button class="btn-add" onclick="openModal('expense')">＋ 支出を追加</button>
+    </div>
+  </div>
+  <div class="sk-card">
+    <div class="sk-top">
+      <h2 id="sk-title">収支フロー図</h2>
+      <div class="mode-wrap">
+        <button class="mode-btn on" id="btn-simple" onclick="setMode('simple')">シンプル</button>
+        <button class="mode-btn"    id="btn-cat"    onclick="setMode('category')">カテゴリ別</button>
+      </div>
+    </div>
+    <div class="legend" id="sk-legend"></div>
+    <div id="sk-wrap"></div>
+  </div>
+</div>
+
+<!-- ══ ANNUAL VIEW ══ -->
+<div id="view-annual" class="wrap" style="display:none">
+  <!-- Summary strip -->
+  <div class="sum-grid4">
+    <div class="sum-card si"><div class="sum-lbl">年間収入</div><div class="sum-val" id="ay-i">¥0</div></div>
+    <div class="sum-card se"><div class="sum-lbl">年間支出</div><div class="sum-val" id="ay-e">¥0</div></div>
+    <div class="sum-card sb"><div class="sum-lbl">年間収支</div><div class="sum-val" id="ay-b">¥0</div></div>
+    <div class="sum-card sc"><div class="sum-lbl">平均貯蓄率</div><div class="sum-val" id="ay-s">–</div></div>
+  </div>
+
+  <!-- 月別収支 bar chart -->
+  <div class="chart-card">
+    <div class="chart-head">月別収支</div>
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--income)"></div>収入</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--expense)"></div>支出</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--balance)"></div>収支（折れ線）</div>
+    </div>
+    <div id="ch-bar"></div>
+  </div>
+
+  <!-- 2-col: donut + credit line -->
+  <div class="chart2">
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="chart-head">年間支出カテゴリ内訳</div>
+      <div id="ch-donut-wrap" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-height:180px"></div>
+    </div>
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="chart-head">クレカ・決済利用推移</div>
+      <div class="chart-sub">決済サービスカテゴリの合計推移</div>
+      <div id="ch-credit"></div>
+    </div>
+  </div>
+  <div style="margin-bottom:18px"></div>
+
+  <!-- カテゴリ別支出推移 stacked bar -->
+  <div class="chart-card">
+    <div class="chart-head">カテゴリ別支出推移</div>
+    <div class="legend" id="ch-stack-leg"></div>
+    <div id="ch-stack"></div>
+  </div>
+
+  <!-- 月別比較テーブル -->
+  <div class="chart-card">
+    <div class="chart-head">月別サマリー</div>
+    <div style="overflow-x:auto">
+      <table class="bt" id="month-tbl" style="min-width:600px"></table>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL ── -->
+<div class="ov" id="modal-ov" onclick="if(event.target===this)closeModal()">
+  <div class="mbox">
+    <div class="m-title" id="m-title">項目を追加</div>
+    <div class="m-grid" id="m-grid"></div>
+    <hr class="m-hr">
+    <p style="font-size:12px;color:#64748b;margin-bottom:8px">新しく作る</p>
+    <div class="m-row">
+      <input class="m-inp" id="m-inp" placeholder="項目名を入力" onkeydown="if(event.key==='Enter')addCustom()">
+      <button class="m-ok" onclick="addCustom()">追加</button>
+    </div>
+    <button class="m-close" onclick="closeModal()">閉じる</button>
+  </div>
+</div>
+<div class="ov" id="auth-ov" onclick="if(event.target===this)closeAuthModal()">
+  <div class="mbox">
+    <div class="m-title">ログイン / 登録</div>
+    <p style="font-size:12px;color:#64748b;margin-bottom:18px;line-height:1.6">ログインするとデータがクラウドに保存され、複数端末で同期できます。</p>
+    <div id="auth-err" style="color:#ef4444;font-size:12px;margin-bottom:8px;min-height:16px"></div>
+    <button id="auth-submit" class="btn-google" onclick="doGoogleSignIn()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Googleでログイン
+    </button>
+    <button class="m-close" onclick="closeAuthModal()">閉じる</button>
+  </div>
+</div>
+<div id="tt"></div>
+
+<script>
+// ════════════════════════════════════════
+//  CATEGORY RULES
+// ════════════════════════════════════════
+const INCOME_CATS = [
+  {name:'給与所得',   color:'#1A9E88', keys:['給与','ボーナス','賞与','報酬']},
+  {name:'事業所得',   color:'#25B49E', keys:['副業','事業','自営','フリー','雑収入']},
+  {name:'不動産所得', color:'#3DCAB1', keys:['家賃','地代','駐車場','不動産']},
+  {name:'一時所得',   color:'#56D4BE', keys:['敷金','礼金','一時','保険金','還付']},
+  {name:'投資所得',   color:'#74DFCC', keys:['投資','配当','株','利息','資産']},
+  {name:'繰越金',     color:'#96E9DA', keys:['繰越','前月']},
+  {name:'その他収入', color:'#BDF3EC', keys:[]},
+];
+const EXPENSE_CATS = [
+  {name:'住居費',       color:'#B91C1C', keys:['家賃','住宅','管理費','修繕','賃料']},
+  {name:'光熱費',       color:'#DC2626', keys:['電気','ガス','水道','光熱']},
+  {name:'食費',         color:'#EF4444', keys:['食費','食料','外食','スーパー','弁当']},
+  {name:'通信費',       color:'#F36060', keys:['通信','電話','インターネット','スマホ','携帯','Wi-Fi']},
+  {name:'交通費',       color:'#F77B7B', keys:['交通','電車','バス','ガソリン','高速','駐車']},
+  {name:'医療・保険',   color:'#FA9797', keys:['医療','病院','薬','保険','健康']},
+  {name:'娯楽・教育',   color:'#FCB3B3', keys:['娯楽','趣味','旅行','映画','教育','学費','本','書籍','サブスク']},
+  {name:'決済サービス', color:'#FECECE', keys:['クレジット','ペイ','カード','Pay','pay','paidy','Paidy']},
+  {name:'雑費',         color:'#9ca3af', keys:[]},
+];
+const INCOME_PRESETS  = ['給与','ボーナス','雑収入','前月繰越金','家賃収入','副業収入','投資収益','敷金返還','その他収入'];
+const EXPENSE_PRESETS = ['家賃','食費','電気代','ガス代','水道代','通信費','交通費','医療費','保険料','クレジットカード利用額','ペイディー','娯楽費','被服費','日用品','教育費','雑支出'];
+const DEMO_I = [{name:'給与',amount:270000},{name:'雑収入',amount:100000},{name:'前月繰越金',amount:20000},{name:'ゆいなからの家賃等',amount:40368},{name:'投資してる資産',amount:31000},{name:'帰ってきた敷金',amount:32000}];
+const DEMO_E = [{name:'ガス代',amount:4000},{name:'電気代',amount:3000},{name:'水道代',amount:0},{name:'クレジットカード利用額',amount:200000},{name:'ペイディー',amount:2411},{name:'雑支出',amount:0},{name:'家賃',amount:96728}];
+
+// ════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════
+const now = new Date();
+let state = {personId:null, year:now.getFullYear(), month:now.getMonth()+1,
+             income:[], expense:[], mode:'simple', view:'monthly', ri:[], re:[]};
+let persons=[], modalType='income', currentUser=null;
+
+// ════════════════════════════════════════
+//  STORAGE
+// ════════════════════════════════════════
+function savePersons(){localStorage.setItem('kb_persons',JSON.stringify(persons));if(currentUser)fsyncPersons();}
+function loadPersons(){const s=localStorage.getItem('kb_persons');persons=s?JSON.parse(s):[]}
+function dKey(pid,y,m){return `kb_${pid}_${y}_${String(m).padStart(2,'0')}`}
+function saveData(){
+  if(!state.personId)return;
+  localStorage.setItem(dKey(state.personId,state.year,state.month),
+    JSON.stringify({income:state.income,expense:state.expense,mode:state.mode}));
+  if(currentUser)fsyncData(state.personId,state.year,state.month);
+}
+function loadData(pid,y,m){
+  loadRecurring(pid);
+  const s=localStorage.getItem(dKey(pid,y,m));
+  if(s){const d=JSON.parse(s);state.income=d.income||[];state.expense=d.expense||[];state.mode=d.mode||'simple';}
+  else{
+    state.income=state.ri.map(x=>({...x}));state.expense=state.re.map(x=>({...x}));
+    // 前月残高を前月繰越金として自動セット
+    const pm=m===1?12:m-1,py=m===1?y-1:y;
+    const ps=localStorage.getItem(dKey(pid,py,pm));
+    if(ps){
+      const pd=JSON.parse(ps);
+      const bal=(pd.income||[]).reduce((t,x)=>t+x.amount,0)-(pd.expense||[]).reduce((t,x)=>t+x.amount,0);
+      if(bal>0){
+        const i=state.income.findIndex(x=>x.name==='前月繰越金');
+        if(i>=0)state.income[i].amount=bal;
+        else state.income.unshift({name:'前月繰越金',amount:bal});
+      }
+    }
+  }
+}
+
+// ════════════════════════════════════════
+//  RECURRING ITEMS
+// ════════════════════════════════════════
+function recurKey(pid){return`kb_recur_${pid}`}
+function saveRecurring(){
+  if(!state.personId)return;
+  localStorage.setItem(recurKey(state.personId),JSON.stringify({income:state.ri,expense:state.re}));
+  if(currentUser)fsyncRecurring(state.personId);
+}
+function loadRecurring(pid){
+  const s=localStorage.getItem(recurKey(pid||state.personId));
+  if(s){const d=JSON.parse(s);state.ri=d.income||[];state.re=d.expense||[];}
+  else{state.ri=[];state.re=[];}
+}
+function isRec(type,name){return(type==='income'?state.ri:state.re).some(x=>x.name===name);}
+function toggleRec(type,name,amount){
+  const arr=type==='income'?state.ri:state.re;
+  const i=arr.findIndex(x=>x.name===name);
+  if(i>=0)arr.splice(i,1);else arr.push({name,amount});
+  saveRecurring();renderTable(type);
+}
+
+// ════════════════════════════════════════
+//  COPY PREV MONTH
+// ════════════════════════════════════════
+function copyPrevMonth(){
+  const pm=state.month===1?12:state.month-1,py=state.month===1?state.year-1:state.year;
+  const s=localStorage.getItem(dKey(state.personId,py,pm));
+  if(!s){alert(`${py}年${pm}月のデータがありません`);return;}
+  const has=state.income.some(x=>x.amount>0)||state.expense.some(x=>x.amount>0);
+  if(has&&!confirm('現在の入力内容を前月データで上書きしますか？'))return;
+  const d=JSON.parse(s);
+  state.income=JSON.parse(JSON.stringify(d.income||[]));
+  state.expense=JSON.parse(JSON.stringify(d.expense||[]));
+  renderTable('income');renderTable('expense');recalc();
+}
+
+// ════════════════════════════════════════
+//  PERSONS
+// ════════════════════════════════════════
+function updatePSel(){
+  const sel=document.getElementById('sel-p');
+  sel.innerHTML=persons.map(p=>`<option value="${esc(p.id)}"${p.id===state.personId?' selected':''}>${esc(p.name)}</option>`).join('')
+    +`<option value="__del__">── 削除 ──</option>`;
+}
+function addNewPerson(){
+  const name=prompt('新しい人物の名前:');
+  if(!name||!name.trim())return;
+  const id='p'+Date.now();persons.push({id,name:name.trim()});savePersons();switchPerson(id);
+}
+function switchPerson(id){saveData();state.personId=id;loadData(id,state.year,state.month);updatePSel();renderAll();}
+
+// ════════════════════════════════════════
+//  PERIOD
+// ════════════════════════════════════════
+function buildYSel(){
+  const sel=document.getElementById('sel-y');sel.innerHTML='';
+  for(let y=state.year-5;y<=state.year+5;y++){
+    const o=document.createElement('option');o.value=y;o.textContent=y+'年';
+    if(y===state.year)o.selected=true;sel.appendChild(o);}
+}
+function buildMSel(){
+  document.getElementById('sel-m').innerHTML=
+    Array.from({length:12},(_,i)=>`<option value="${i+1}"${i+1===state.month?' selected':''}>${i+1}月</option>`).join('');
+}
+function setPeriod(y,m){saveData();state.year=y;state.month=m;loadData(state.personId,y,m);buildYSel();buildMSel();renderAll();}
+function prevMonth(){let y=state.year,m=state.month-1;if(m<1){m=12;y--;}setPeriod(y,m);}
+function nextMonth(){let y=state.year,m=state.month+1;if(m>12){m=1;y++;}setPeriod(y,m);}
+
+// ════════════════════════════════════════
+//  VIEW TOGGLE
+// ════════════════════════════════════════
+function setView(v){
+  state.view=v;
+  document.getElementById('view-monthly').style.display=v==='monthly'?'':'none';
+  document.getElementById('view-annual').style.display =v==='annual' ?'':'none';
+  document.getElementById('vt-m').classList.toggle('on',v==='monthly');
+  document.getElementById('vt-a').classList.toggle('on',v==='annual');
+  // hide month selector in annual mode
+  document.getElementById('sel-m').classList.toggle('hide-monthly', v==='annual');
+  document.getElementById('btn-prev').classList.toggle('hide-monthly', v==='annual');
+  document.getElementById('btn-next').classList.toggle('hide-monthly', v==='annual');
+  if(v==='annual'){saveData();drawAnnualView();}
+}
+
+// ════════════════════════════════════════
+//  MODE (Sankey)
+// ════════════════════════════════════════
+function setMode(m){
+  state.mode=m;
+  document.getElementById('btn-simple').classList.toggle('on',m==='simple');
+  document.getElementById('btn-cat').classList.toggle('on',m==='category');
+  saveData();recalc();
+}
+
+// ════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════
+function fmt(n){return'¥'+Math.round(n).toLocaleString('ja-JP')}
+function parseAmt(s){const v=parseInt((s||'').replace(/[^0-9\-]/g,''),10);return isNaN(v)?0:v;}
+function categorize(name,cats){for(const c of cats)if(c.keys.some(k=>name.includes(k)))return c;return cats[cats.length-1];}
+function fmtShort(n){return n>=100000000?`${(n/100000000).toFixed(1)}億`:n>=10000?`${(n/10000).toFixed(n>=1000000?0:1)}万`:n.toLocaleString()}
+
+// ════════════════════════════════════════
+//  TABLE RENDER
+// ════════════════════════════════════════
+function renderTable(type){
+  const data=type==='income'?state.income:state.expense;
+  const tbody=document.getElementById(type==='income'?'tb-i':'tb-e');
+  tbody.innerHTML='';
+  data.forEach((item,idx)=>{
+    const tr=document.createElement('tr');
+    if(isRec(type,item.name))tr.classList.add('tr-recur');
+    const tdN=document.createElement('td');
+    const inN=document.createElement('input');
+    inN.type='text';inN.value=item.name;inN.placeholder='名目';
+    inN.oninput=e=>{data[idx].name=e.target.value;debounce();};
+    tdN.appendChild(inN);
+    const tdA=document.createElement('td');tdA.className='td-a';
+    const inA=document.createElement('input');
+    inA.type='text';inA.value=item.amount?fmt(item.amount):'';inA.style.textAlign='right';
+    inA.onfocus=()=>{inA.value=item.amount||'';};
+    inA.onblur=()=>{data[idx].amount=parseAmt(inA.value);inA.value=data[idx].amount?fmt(data[idx].amount):'';recalc();};
+    tdA.appendChild(inA);
+    const tdX=document.createElement('td');tdX.className='td-x';
+    const bx=document.createElement('button');bx.className='btn-x';bx.textContent='✕';
+    bx.onclick=()=>{data.splice(idx,1);renderTable(type);recalc();};
+    tdX.appendChild(bx);
+    const tdP=document.createElement('td');tdP.className='td-x';
+    const bp=document.createElement('button');
+    bp.className='btn-pin'+(isRec(type,item.name)?' on':'');
+    bp.textContent='📌';bp.title=isRec(type,item.name)?'繰り返し登録済み（クリックで解除）':'繰り返し項目に登録';
+    bp.onclick=()=>toggleRec(type,item.name,item.amount);
+    tdP.appendChild(bp);
+    tr.append(tdN,tdA,tdX,tdP);tbody.appendChild(tr);
+  });
+}
+let _dt=null;
+function debounce(){clearTimeout(_dt);_dt=setTimeout(recalc,300);}
+
+function recalc(){
+  const ti=state.income.reduce((s,x)=>s+x.amount,0);
+  const te=state.expense.reduce((s,x)=>s+x.amount,0);
+  const b=ti-te;
+  document.getElementById('v-income').textContent=fmt(ti);
+  document.getElementById('v-expense').textContent=fmt(te);
+  document.getElementById('v-balance').textContent=fmt(b);
+  document.getElementById('ft-i').textContent=fmt(ti);
+  document.getElementById('ft-e').textContent=fmt(te);
+  document.getElementById('sk-title').textContent=`${state.year}年${state.month}月 の収支フロー図`;
+  drawSankey(ti,te,b);saveData();
+}
+function renderAll(){
+  renderTable('income');renderTable('expense');
+  buildYSel();buildMSel();updatePSel();
+  document.getElementById('btn-simple').classList.toggle('on',state.mode==='simple');
+  document.getElementById('btn-cat').classList.toggle('on',state.mode==='category');
+  if(state.view==='annual')drawAnnualView();
+  else recalc();
+}
+
+// ════════════════════════════════════════
+//  MODAL
+// ════════════════════════════════════════
+function openModal(type){
+  modalType=type;
+  const presets=type==='income'?INCOME_PRESETS:EXPENSE_PRESETS;
+  document.getElementById('m-title').textContent=type==='income'?'収入項目を追加':'支出項目を追加';
+  document.getElementById('m-grid').innerHTML=presets.map(p=>`<button class="chip" onclick="addPreset('${p}')">${p}</button>`).join('');
+  document.getElementById('m-inp').value='';
+  document.getElementById('modal-ov').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>document.getElementById('m-inp').focus(),200);
+}
+function closeModal(){document.getElementById('modal-ov').classList.remove('open');document.body.style.overflow='';}
+function addPreset(name){const data=modalType==='income'?state.income:state.expense;data.push({name,amount:0});renderTable(modalType);recalc();closeModal();}
+function addCustom(){const v=document.getElementById('m-inp').value.trim();if(!v)return;addPreset(v);}
+
+// ════════════════════════════════════════
+//  ANNUAL DATA LOADER
+// ════════════════════════════════════════
+function loadAnnualData(){
+  saveData();
+  return Array.from({length:12},(_,i)=>{
+    const m=i+1;
+    const s=localStorage.getItem(dKey(state.personId,state.year,m));
+    if(!s)return{m,income:0,expense:0,balance:0,credit:0,cats:{},raw:null};
+    const d=JSON.parse(s);
+    const inc=(d.income||[]).reduce((t,x)=>t+x.amount,0);
+    const exp=(d.expense||[]).reduce((t,x)=>t+x.amount,0);
+    const credit=(d.expense||[]).filter(x=>categorize(x.name,EXPENSE_CATS).name==='決済サービス').reduce((t,x)=>t+x.amount,0);
+    const cats={};
+    (d.expense||[]).forEach(x=>{const cn=categorize(x.name,EXPENSE_CATS).name;cats[cn]=(cats[cn]||0)+x.amount;});
+    return{m,income:inc,expense:exp,balance:inc-exp,credit,cats,raw:d};
+  });
+}
+
+// ════════════════════════════════════════
+//  ANNUAL VIEW ORCHESTRATOR
+// ════════════════════════════════════════
+function drawAnnualView(){
+  const months=loadAnnualData();
+  const yi=months.reduce((s,d)=>s+d.income,0);
+  const ye=months.reduce((s,d)=>s+d.expense,0);
+  const withData=months.filter(d=>d.income>0||d.expense>0);
+  const sr=withData.length?withData.filter(d=>d.income>0).reduce((s,d)=>s+d.balance/d.income*100,0)/(withData.filter(d=>d.income>0).length||1):0;
+  document.getElementById('ay-i').textContent=fmt(yi);
+  document.getElementById('ay-e').textContent=fmt(ye);
+  document.getElementById('ay-b').textContent=fmt(yi-ye);
+  document.getElementById('ay-s').textContent=Math.round(sr)+'%';
+
+  drawMonthBar(document.getElementById('ch-bar'),months);
+
+  // Donut data
+  const catTotals={};
+  months.forEach(d=>Object.entries(d.cats).forEach(([k,v])=>{catTotals[k]=(catTotals[k]||0)+v;}));
+  const catData=EXPENSE_CATS.map(c=>({name:c.name,color:c.color,total:catTotals[c.name]||0})).filter(d=>d.total>0);
+  drawDonut(document.getElementById('ch-donut-wrap'),catData,ye);
+
+  drawCreditLine(document.getElementById('ch-credit'),months);
+
+  const usedCats=EXPENSE_CATS.filter(c=>months.some(d=>d.cats[c.name]>0));
+  document.getElementById('ch-stack-leg').innerHTML=usedCats.map(c=>`<div class="leg"><div class="leg-dot" style="background:${c.color}"></div>${c.name}</div>`).join('');
+  drawStackedBar(document.getElementById('ch-stack'),months,usedCats);
+  drawMonthTable(months);
+}
+
+// ════════════════════════════════════════
+//  CHART 1: 月別収支バー
+// ════════════════════════════════════════
+function drawMonthBar(el,months){
+  el.innerHTML='';
+  const W=el.clientWidth||800, H=260;
+  const mg={t:20,r:20,b:34,l:60};
+  const svg=d3.select(el).append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).attr('height',H);
+  const maxV=d3.max(months,d=>Math.max(d.income,d.expense))||1;
+  const x0=d3.scaleBand().domain(months.map(d=>d.m)).range([mg.l,W-mg.r]).padding(.22);
+  const x1=d3.scaleBand().domain(['i','e']).range([0,x0.bandwidth()]).padding(.06);
+  const y=d3.scaleLinear().domain([0,maxV]).nice().range([H-mg.b,mg.t]);
+  // grid
+  svg.append('g').call(d3.axisLeft(y).ticks(5).tickSize(-(W-mg.l-mg.r)).tickFormat(''))
+    .attr('transform',`translate(${mg.l},0)`).select('.domain').remove();
+  svg.selectAll('.tick line').attr('stroke','#f1f5f9');
+  // bars income
+  svg.selectAll('.bi').data(months).join('rect').attr('class','bi')
+    .attr('x',d=>x0(d.m)+x1('i')).attr('y',d=>d.income?y(d.income):H-mg.b)
+    .attr('width',x1.bandwidth()).attr('height',d=>Math.max(0,(H-mg.b)-y(d.income||0)))
+    .attr('fill','var(--income)').attr('rx',2).attr('opacity',.85)
+    .on('mouseover',(ev,d)=>showTT(ev,`${d.m}月 収入<br><b>${fmt(d.income)}</b>`))
+    .on('mousemove',moveTT).on('mouseout',hideTT);
+  // bars expense
+  svg.selectAll('.be').data(months).join('rect').attr('class','be')
+    .attr('x',d=>x0(d.m)+x1('e')).attr('y',d=>d.expense?y(d.expense):H-mg.b)
+    .attr('width',x1.bandwidth()).attr('height',d=>Math.max(0,(H-mg.b)-y(d.expense||0)))
+    .attr('fill','var(--expense)').attr('rx',2).attr('opacity',.85)
+    .on('mouseover',(ev,d)=>showTT(ev,`${d.m}月 支出<br><b>${fmt(d.expense)}</b>`))
+    .on('mousemove',moveTT).on('mouseout',hideTT);
+  // balance line
+  const active=months.filter(d=>d.income>0||d.expense>0);
+  if(active.length>=2){
+    const yB=d3.scaleLinear().domain(d3.extent(active,d=>d.balance)).nice().range([H-mg.b,mg.t]);
+    const line=d3.line().x(d=>x0(d.m)+x0.bandwidth()/2).y(d=>yB(d.balance)).curve(d3.curveMonotoneX);
+    svg.append('path').datum(active).attr('fill','none').attr('stroke','var(--balance)').attr('stroke-width',2.5).attr('d',line);
+    svg.selectAll('.db').data(active).join('circle').attr('class','db')
+      .attr('cx',d=>x0(d.m)+x0.bandwidth()/2).attr('cy',d=>yB(d.balance))
+      .attr('r',4).attr('fill','var(--balance)').attr('stroke','#fff').attr('stroke-width',1.5)
+      .on('mouseover',(ev,d)=>showTT(ev,`${d.m}月 収支<br><b>${fmt(d.balance)}</b>`))
+      .on('mousemove',moveTT).on('mouseout',hideTT);
+  }
+  // axes
+  svg.append('g').attr('transform',`translate(0,${H-mg.b})`).call(d3.axisBottom(x0).tickFormat(d=>`${d}月`)).select('.domain').remove();
+  svg.append('g').attr('transform',`translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d=>fmtShort(d))).select('.domain').remove();
+  if(!months.some(d=>d.income||d.expense))el.innerHTML=`<div class="no-data">データがありません</div>`;
+}
+
+// ════════════════════════════════════════
+//  CHART 2: 年間支出ドーナツ
+// ════════════════════════════════════════
+function drawDonut(el,catData,total){
+  el.innerHTML='';
+  if(!total||!catData.length){el.innerHTML=`<div class="no-data">支出データがありません</div>`;return;}
+  const size=190,R=82,r=50;
+  const svgEl=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svgEl.setAttribute('width',size);svgEl.setAttribute('height',size);
+  el.appendChild(svgEl);
+  const svg=d3.select(svgEl);
+  const g=svg.append('g').attr('transform',`translate(${size/2},${size/2})`);
+  const pie=d3.pie().value(d=>d.total).sort(null);
+  const arc=d3.arc().innerRadius(r).outerRadius(R);
+  const arcH=d3.arc().innerRadius(r).outerRadius(R+5);
+  g.selectAll('path').data(pie(catData)).join('path')
+    .attr('d',arc).attr('fill',d=>d.data.color).attr('stroke','#fff').attr('stroke-width',2)
+    .on('mouseover',function(ev,d){d3.select(this).attr('d',arcH);showTT(ev,`<b>${d.data.name}</b><br>${fmt(d.data.total)}<br>${Math.round(d.data.total/total*100)}%`);})
+    .on('mousemove',moveTT).on('mouseout',function(_,d){d3.select(this).attr('d',arc);hideTT();});
+  g.append('text').attr('text-anchor','middle').attr('dy','-.3em').attr('font-size',10).attr('fill','var(--muted)').text('年間支出');
+  g.append('text').attr('text-anchor','middle').attr('dy','.9em').attr('font-size',12).attr('font-weight','700').attr('fill','var(--text)').text(fmt(total));
+  // legend
+  const leg=document.createElement('div');
+  leg.style.cssText='flex:1;min-width:130px;font-size:11px;display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto';
+  [...catData].sort((a,b)=>b.total-a.total).forEach(d=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:5px';
+    row.innerHTML=`<span style="width:9px;height:9px;border-radius:2px;background:${d.color};flex-shrink:0;display:block"></span><span style="flex:1;color:var(--text)">${d.name}</span><span style="font-weight:700;color:${d.color}">${Math.round(d.total/total*100)}%</span>`;
+    leg.appendChild(row);
+  });
+  el.appendChild(leg);
+}
+
+// ════════════════════════════════════════
+//  CHART 3: クレカ利用折れ線
+// ════════════════════════════════════════
+function drawCreditLine(el,months){
+  el.innerHTML='';
+  const W=el.clientWidth||400,H=200;
+  const mg={t:15,r:20,b:34,l:60};
+  const maxV=d3.max(months,d=>d.credit)||0;
+  if(!maxV){el.innerHTML=`<div class="no-data">決済サービスの支出データがありません</div>`;return;}
+  const svg=d3.select(el).append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).attr('height',H);
+  const x=d3.scaleBand().domain(months.map(d=>d.m)).range([mg.l,W-mg.r]).padding(.3);
+  const y=d3.scaleLinear().domain([0,maxV]).nice().range([H-mg.b,mg.t]);
+  // area
+  svg.append('path').datum(months)
+    .attr('fill','rgba(220,38,38,.08)')
+    .attr('d',d3.area().x(d=>x(d.m)+x.bandwidth()/2).y0(H-mg.b).y1(d=>y(d.credit)).curve(d3.curveMonotoneX));
+  // line
+  svg.append('path').datum(months).attr('fill','none')
+    .attr('stroke','var(--expense)').attr('stroke-width',2.5)
+    .attr('d',d3.line().x(d=>x(d.m)+x.bandwidth()/2).y(d=>y(d.credit)).curve(d3.curveMonotoneX));
+  // dots
+  svg.selectAll('.dc').data(months).join('circle').attr('class','dc')
+    .attr('cx',d=>x(d.m)+x.bandwidth()/2).attr('cy',d=>y(d.credit))
+    .attr('r',d=>d.credit>0?4:2).attr('fill',d=>d.credit>0?'var(--expense)':'#ddd').attr('stroke','#fff').attr('stroke-width',1.5)
+    .on('mouseover',(ev,d)=>showTT(ev,`${d.m}月 決済合計<br><b>${fmt(d.credit)}</b>`))
+    .on('mousemove',moveTT).on('mouseout',hideTT);
+  svg.append('g').attr('transform',`translate(0,${H-mg.b})`).call(d3.axisBottom(x).tickFormat(d=>`${d}月`)).select('.domain').remove();
+  svg.append('g').attr('transform',`translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(d=>fmtShort(d))).select('.domain').remove();
+}
+
+// ════════════════════════════════════════
+//  CHART 4: カテゴリ別積み上げバー
+// ════════════════════════════════════════
+function drawStackedBar(el,months,usedCats){
+  el.innerHTML='';
+  if(!usedCats.length){el.innerHTML=`<div class="no-data">支出データがありません</div>`;return;}
+  const W=el.clientWidth||800,H=240;
+  const mg={t:15,r:20,b:34,l:60};
+  const keys=usedCats.map(c=>c.name);
+  const colorMap=Object.fromEntries(EXPENSE_CATS.map(c=>[c.name,c.color]));
+  const stackData=months.map(d=>Object.assign({m:d.m},...keys.map(k=>({[k]:d.cats[k]||0}))));
+  const series=d3.stack().keys(keys)(stackData);
+  const maxV=d3.max(series[series.length-1],d=>d[1])||1;
+  const x=d3.scaleBand().domain(months.map(d=>d.m)).range([mg.l,W-mg.r]).padding(.22);
+  const y=d3.scaleLinear().domain([0,maxV]).nice().range([H-mg.b,mg.t]);
+  const svg=d3.select(el).append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).attr('height',H);
+  svg.append('g').call(d3.axisLeft(y).ticks(5).tickSize(-(W-mg.l-mg.r)).tickFormat(''))
+    .attr('transform',`translate(${mg.l},0)`).select('.domain').remove();
+  svg.selectAll('.tick line').attr('stroke','#f1f5f9');
+  series.forEach(s=>{
+    const col=colorMap[s.key]||'#888';
+    svg.selectAll(null).data(s).join('rect')
+      .attr('x',d=>x(d.data.m)).attr('width',x.bandwidth())
+      .attr('y',d=>y(d[1])).attr('height',d=>Math.max(0,y(d[0])-y(d[1])))
+      .attr('fill',col).attr('rx',1)
+      .on('mouseover',(ev,d)=>showTT(ev,`${d.data.m}月 ${s.key}<br><b>${fmt(d[1]-d[0])}</b>`))
+      .on('mousemove',moveTT).on('mouseout',hideTT);
+  });
+  svg.append('g').attr('transform',`translate(0,${H-mg.b})`).call(d3.axisBottom(x).tickFormat(d=>`${d}月`)).select('.domain').remove();
+  svg.append('g').attr('transform',`translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d=>fmtShort(d))).select('.domain').remove();
+}
+
+// ════════════════════════════════════════
+//  CHART 5: 月別サマリーテーブル
+// ════════════════════════════════════════
+function drawMonthTable(months){
+  const tbl=document.getElementById('month-tbl');
+  const cols=['月','収入','支出','収支','貯蓄率','決済サービス'];
+  tbl.innerHTML=`<thead><tr>${cols.map(c=>`<th style="text-align:${c==='月'?'center':'right'}">${c}</th>`).join('')}</tr></thead>`;
+  const tb=document.createElement('tbody');
+  const tfRow=document.createElement('tr');
+  let si=0,se=0,sb=0;
+  months.forEach(d=>{
+    const bal=d.balance;
+    const sr=d.income>0?Math.round(bal/d.income*100):null;
+    const has=d.income>0||d.expense>0;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="text-align:center;font-weight:700">${d.m}月</td>
+      <td style="text-align:right;color:var(--income)">${has?fmt(d.income):'–'}</td>
+      <td style="text-align:right;color:var(--expense)">${has?fmt(d.expense):'–'}</td>
+      <td style="text-align:right;color:${bal>=0?'var(--balance)':'var(--expense)'};font-weight:600">${has?fmt(bal):'–'}</td>
+      <td style="text-align:right;color:${sr>=0?'var(--balance)':'var(--expense)'}">${sr!==null?sr+'%':'–'}</td>
+      <td style="text-align:right;color:var(--muted)">${d.credit>0?fmt(d.credit):'–'}</td>`;
+    tb.appendChild(tr);
+    si+=d.income;se+=d.expense;sb+=bal;
+  });
+  const avgSr=months.filter(d=>d.income>0).length?Math.round(months.filter(d=>d.income>0).reduce((s,d)=>s+d.balance/d.income*100,0)/months.filter(d=>d.income>0).length):null;
+  tfRow.innerHTML=`<td style="text-align:center;font-weight:700">合計</td>
+    <td style="text-align:right;color:var(--income);font-weight:700">${fmt(si)}</td>
+    <td style="text-align:right;color:var(--expense);font-weight:700">${fmt(se)}</td>
+    <td style="text-align:right;color:${sb>=0?'var(--balance)':'var(--expense)'};font-weight:700">${fmt(sb)}</td>
+    <td style="text-align:right;font-weight:700">${avgSr!==null?avgSr+'%':'–'}</td>
+    <td style="text-align:right;color:var(--muted);font-weight:700">${fmt(months.reduce((s,d)=>s+d.credit,0))}</td>`;
+  tfRow.style.cssText='background:#f8fafc;border-top:2px solid var(--text)';
+  tb.appendChild(tfRow);
+  tbl.appendChild(tb);
+}
+
+// ════════════════════════════════════════
+//  SANKEY helpers
+// ════════════════════════════════════════
+function addLbl(g,x,y,anchor,text,sz,weight,color){
+  const bg=g.append('rect').attr('rx',2).attr('fill','rgba(255,255,255,.88)');
+  const t=g.append('text').attr('x',x).attr('y',y).attr('text-anchor',anchor)
+    .attr('dominant-baseline','middle').attr('font-size',sz).attr('font-weight',weight)
+    .attr('fill',color).attr('font-family',"'Hiragino Kaku Gothic ProN','Hiragino Sans','Meiryo',sans-serif").text(text);
+  try{const b=t.node().getBBox();bg.attr('x',b.x-2).attr('y',b.y-1).attr('width',b.width+4).attr('height',b.height+2);}catch(e){bg.remove();}
+  return t;
+}
+function buildSimpleGraph(iI,eI,bal){
+  const nodes=[],links=[];
+  iI.forEach(it=>nodes.push({name:it.name,type:'income',amount:it.amount,color:'#3DCAB1'}));
+  const ci=nodes.length;
+  nodes.push({name:'収入総額',type:'center',amount:iI.reduce((s,x)=>s+x.amount,0),color:'#374151'});
+  iI.forEach((_,i)=>links.push({source:i,target:ci,value:iI[i].amount}));
+  eI.forEach(it=>{const idx=nodes.length;nodes.push({name:it.name,type:'expense',amount:it.amount,color:'#EF4444'});links.push({source:ci,target:idx,value:it.amount});});
+  if(bal>0){const bi=nodes.length;nodes.push({name:'残高（収支）',type:'balance',amount:bal,color:'#9CA3AF'});links.push({source:ci,target:bi,value:bal});}
+  return{nodes,links};
+}
+function buildCatGraph(iI,eI,bal){
+  const nodes=[],links=[],iCatIdx={},eCatIdx={};
+  iI.forEach(it=>nodes.push({name:it.name,type:'income-item',amount:it.amount,color:categorize(it.name,INCOME_CATS).color}));
+  const usedIC=[...new Set(iI.map(it=>categorize(it.name,INCOME_CATS).name))];
+  usedIC.forEach(cn=>{iCatIdx[cn]=nodes.length;const cat=INCOME_CATS.find(c=>c.name===cn);const tot=iI.filter(it=>categorize(it.name,INCOME_CATS).name===cn).reduce((s,x)=>s+x.amount,0);nodes.push({name:cn,type:'income-cat',amount:tot,color:cat.color});});
+  iI.forEach((it,i)=>links.push({source:i,target:iCatIdx[categorize(it.name,INCOME_CATS).name],value:it.amount}));
+  const ci=nodes.length;
+  nodes.push({name:'収入総額',type:'center',amount:iI.reduce((s,x)=>s+x.amount,0),color:'#374151'});
+  usedIC.forEach(cn=>links.push({source:iCatIdx[cn],target:ci,value:nodes[iCatIdx[cn]].amount}));
+  const usedEC=[...new Set(eI.map(it=>categorize(it.name,EXPENSE_CATS).name))];
+  usedEC.forEach(cn=>{eCatIdx[cn]=nodes.length;const cat=EXPENSE_CATS.find(c=>c.name===cn);const tot=eI.filter(it=>categorize(it.name,EXPENSE_CATS).name===cn).reduce((s,x)=>s+x.amount,0);nodes.push({name:cn,type:'expense-cat',amount:tot,color:cat.color});});
+  usedEC.forEach(cn=>links.push({source:ci,target:eCatIdx[cn],value:nodes[eCatIdx[cn]].amount}));
+  eI.forEach(it=>{const idx=nodes.length;nodes.push({name:it.name,type:'expense-item',amount:it.amount,color:categorize(it.name,EXPENSE_CATS).color});links.push({source:eCatIdx[categorize(it.name,EXPENSE_CATS).name],target:idx,value:it.amount});});
+  if(bal>0){const bi=nodes.length;nodes.push({name:'残高（収支）',type:'balance',amount:bal,color:'#9CA3AF'});links.push({source:ci,target:bi,value:bal});}
+  return{nodes,links};
+}
+
+// ════════════════════════════════════════
+//  SANKEY DRAW
+// ════════════════════════════════════════
+function drawSankey(ti,te,bal){
+  const wrap=document.getElementById('sk-wrap');wrap.innerHTML='';
+  const iI=state.income.filter(x=>x.amount>0),eI=state.expense.filter(x=>x.amount>0);
+  if(!iI.length||ti===0){buildSkLegend([]);return;}
+  const{nodes:gn,links:gl}=state.mode==='category'?buildCatGraph(iI,eI,bal):buildSimpleGraph(iI,eI,bal);
+  const W=Math.max(wrap.clientWidth||800,600),ML=195,MR=195,MT=55,MB=24;
+  const rowR=Math.max(eI.length+(bal>0?1:0),1);
+  const H=Math.max(480,Math.max(iI.length,rowR)*56+MT+MB+40);
+  const svg=d3.select('#sk-wrap').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).attr('height',H).style('display','block');
+  const sankey=d3.sankey().nodeId(d=>d._sid).nodeWidth(18).nodePadding(12).extent([[ML,MT],[W-MR,H-MB]]);
+  const nodesD3=gn.map((d,i)=>({...d,_sid:i}));
+  const graph=sankey({nodes:nodesD3,links:gl.map(d=>({...d}))});
+  const maxD=d3.max(graph.nodes,d=>d.depth);
+  svg.append('g').selectAll('.s-link').data(graph.links).join('path').attr('class','s-link')
+    .attr('d',d3.sankeyLinkHorizontal())
+    .attr('fill','none')
+    .attr('stroke',d=>d.source.type==='center'?d.target.color||'#888':d.source.color||'#888')
+    .attr('stroke-opacity',.4)
+    .attr('stroke-width',d=>Math.max(1.5,d.width))
+    .on('mouseover',(ev,d)=>showTT(ev,`<b>${esc(d.source.name)}</b><br>→ <b>${esc(d.target.name)}</b><br>${fmt(d.value)}`))
+    .on('mousemove',moveTT).on('mouseout',hideTT);
+  const nodeG=svg.append('g').selectAll('g').data(graph.nodes).join('g').attr('transform',d=>`translate(${d.x0},${d.y0})`);
+  nodeG.append('rect').attr('width',d=>d.x1-d.x0).attr('height',d=>Math.max(3,d.y1-d.y0))
+    .attr('fill',d=>d.color||'#888').attr('rx',3)
+    .on('mouseover',(ev,d)=>showTT(ev,`<b>${esc(d.name)}</b><br>${fmt(d.amount)}`))
+    .on('mousemove',moveTT).on('mouseout',hideTT);
+  nodeG.each(function(d){
+    const g=d3.select(this),nw=d.x1-d.x0,nh=Math.max(3,d.y1-d.y0),midY=nh/2;
+    const isTerminal=!d.sourceLinks||d.sourceLinks.length===0;
+    const isLeft=d.depth===0,isCenter=d.type==='center',isMiddle=!isLeft&&!isTerminal&&!isCenter;
+    const c=d.color||'#1e293b';
+    if(isCenter){addLbl(g,nw/2,-22,'middle',d.name,13,'700',c);addLbl(g,nw/2,-8,'middle',fmt(d.amount),11,'normal',c);}
+    else if(isLeft){addLbl(g,-10,midY-8,'end',d.name,12,'600','#1e293b');addLbl(g,-10,midY+7,'end',fmt(d.amount),11,'normal',c);}
+    else if(isTerminal){addLbl(g,nw+10,midY-8,'start',d.name,12,'600','#1e293b');addLbl(g,nw+10,midY+7,'start',fmt(d.amount),11,'normal',c);}
+    else if(isMiddle){
+      if(nh>=30){g.append('text').attr('x',nw/2).attr('y',midY).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('font-size',nh>=44?11:10).attr('fill','#fff').attr('font-weight','700').attr('font-family',"'Hiragino Kaku Gothic ProN','Hiragino Sans','Meiryo',sans-serif").text(d.name.length>6?d.name.slice(0,5)+'…':d.name);}
+      else{addLbl(g,nw/2,-9,'middle',d.name,10,'600',c);}
+    }
+  });
+  buildSkLegend(graph.nodes);
+}
+function buildSkLegend(nodes){
+  const seen=new Set(),items=[];
+  if(state.mode==='simple'){items.push({color:'#3DCAB1',label:'収入'},{color:'#374151',label:'収入総額'},{color:'#EF4444',label:'支出'},{color:'#9CA3AF',label:'残高（収支）'});}
+  else nodes.forEach(n=>{if(!seen.has(n.name)&&(n.type==='income-cat'||n.type==='expense-cat'||n.type==='balance'||n.type==='center')){seen.add(n.name);items.push({color:n.color||'#888',label:n.name});}});
+  document.getElementById('sk-legend').innerHTML=items.map(it=>`<div class="leg"><div class="leg-dot" style="background:${it.color}"></div>${it.label}</div>`).join('');
+}
+
+// ════════════════════════════════════════
+//  TOOLTIP
+// ════════════════════════════════════════
+const ttEl=document.getElementById('tt');
+function showTT(ev,html){ttEl.innerHTML=html;ttEl.style.opacity='1';moveTT(ev);}
+function moveTT(ev){ttEl.style.left=(ev.clientX+14)+'px';ttEl.style.top=(ev.clientY-14)+'px';}
+function hideTT(){ttEl.style.opacity='0';}
+
+// ════════════════════════════════════════
+//  FIREBASE
+// ════════════════════════════════════════
+firebase.initializeApp({
+  apiKey:"AIzaSyDnZDuKPcZqBKDJa9AViDszBc9rb_Ve6YY",
+  authDomain:"kakeivox.firebaseapp.com",
+  projectId:"kakeivox",
+  storageBucket:"kakeivox.firebasestorage.app",
+  messagingSenderId:"832486440264",
+  appId:"1:832486440264:web:916f6110f374506852077d"
+});
+const auth=firebase.auth();
+const db=firebase.firestore();
+
+function uidPath(...segs){return['users',currentUser.uid,...segs].join('/');}
+function fsEntryId(pid,y,m){return`${pid}_${y}_${String(m).padStart(2,'0')}`;}
+async function fsPush(path,data){try{await db.doc(path).set(data,{merge:true});}catch(e){console.warn('fs write',e);}}
+async function fsPull(path){try{const s=await db.doc(path).get();return s.exists?s.data():null;}catch(e){return null;}}
+function fsyncPersons(){if(currentUser)fsPush(uidPath('meta','persons'),{persons});}
+function fsyncData(pid,y,m){const s=localStorage.getItem(dKey(pid,y,m));if(s)fsPush(uidPath('entries',fsEntryId(pid,y,m)),JSON.parse(s));}
+function fsyncRecurring(pid){const s=localStorage.getItem(recurKey(pid));if(s)fsPush(uidPath('recurring',pid),JSON.parse(s));}
+
+async function syncFromFirestore(){
+  const pData=await fsPull(uidPath('meta','persons'));
+  if(pData&&pData.persons&&pData.persons.length){
+    persons=pData.persons;
+    localStorage.setItem('kb_persons',JSON.stringify(persons));
+    try{const snap=await db.collection(uidPath('entries')).get();
+      snap.forEach(doc=>{const p=doc.id.match(/^(.+)_(\d{4})_(\d{2})$/);
+        if(p)localStorage.setItem(`kb_${p[1]}_${p[2]}_${p[3]}`,JSON.stringify(doc.data()));});}catch(e){}
+    try{const snap=await db.collection(uidPath('recurring')).get();
+      snap.forEach(doc=>localStorage.setItem(recurKey(doc.id),JSON.stringify(doc.data())));}catch(e){}
+  }else{
+    fsyncPersons();
+    persons.forEach(p=>{
+      for(let y=now.getFullYear()-1;y<=now.getFullYear()+1;y++)
+        for(let m=1;m<=12;m++){const s=localStorage.getItem(dKey(p.id,y,m));if(s)fsPush(uidPath('entries',fsEntryId(p.id,y,m)),JSON.parse(s));}
+      fsyncRecurring(p.id);
+    });
+  }
+}
+
+function openAuthModal(){
+  document.getElementById('auth-err').textContent='';
+  const btn=document.getElementById('auth-submit');
+  btn.textContent='Googleでログイン';btn.disabled=false;
+  document.getElementById('auth-ov').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeAuthModal(){document.getElementById('auth-ov').classList.remove('open');document.body.style.overflow='';}
+async function doGoogleSignIn(){
+  const errEl=document.getElementById('auth-err');
+  const btn=document.getElementById('auth-submit');
+  btn.textContent='処理中…';btn.disabled=true;
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+    closeAuthModal();
+  }catch(e){
+    const msgs={'auth/popup-closed-by-user':'キャンセルされました','auth/popup-blocked':'ポップアップを許可してください','auth/cancelled-popup-request':'キャンセルされました'};
+    errEl.textContent=msgs[e.code]||'エラー: '+e.message;
+    btn.textContent='Googleでログイン';btn.disabled=false;
+  }
+}
+async function doSignOut(){await auth.signOut();}
+function updateAuthUI(){
+  const area=document.getElementById('auth-area');
+  if(!area)return;
+  if(currentUser){
+    const name=currentUser.displayName||currentUser.email||'';
+    const s=name.length>16?name.slice(0,15)+'…':name;
+    area.innerHTML=`<span style="font-size:11px;color:#94a3b8;white-space:nowrap" title="${esc(name)}">${esc(s)}</span><button class="btn-np" onclick="doSignOut()">ログアウト</button>`;
+  }else{
+    area.innerHTML=`<button class="btn-np" onclick="openAuthModal()">🔑 ログイン</button>`;
+  }
+}
+auth.onAuthStateChanged(async user=>{
+  currentUser=user;
+  updateAuthUI();
+  if(user){
+    await syncFromFirestore();
+    loadPersons();
+    if(persons.length){state.personId=persons[0].id;loadData(state.personId,state.year,state.month);}
+    renderAll();
+  }
+});
+
+// ════════════════════════════════════════
+//  EVENTS
+// ════════════════════════════════════════
+document.getElementById('btn-prev').onclick=prevMonth;
+document.getElementById('btn-next').onclick=nextMonth;
+document.getElementById('btn-np').onclick=addNewPerson;
+document.getElementById('sel-y').addEventListener('change',e=>setPeriod(+e.target.value,state.month));
+document.getElementById('sel-m').addEventListener('change',e=>setPeriod(state.year,+e.target.value));
+document.getElementById('sel-p').addEventListener('change',e=>{
+  if(e.target.value==='__del__'){
+    if(persons.length<=1){alert('最低1人は必要です');e.target.value=state.personId;return;}
+    if(!confirm(`「${persons.find(p=>p.id===state.personId)?.name}」を削除しますか？`)){e.target.value=state.personId;return;}
+    persons=persons.filter(p=>p.id!==state.personId);savePersons();switchPerson(persons[0].id);
+  }else switchPerson(e.target.value);
+});
+window.addEventListener('resize',()=>{
+  if(state.view==='monthly'){const ti=state.income.reduce((s,x)=>s+x.amount,0);const te=state.expense.reduce((s,x)=>s+x.amount,0);drawSankey(ti,te,ti-te);}
+  else drawAnnualView();
+});
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+(function init(){
+  loadPersons();
+  if(!persons.length){
+    const id='p'+Date.now();persons.push({id,name:'笠井翔太'});savePersons();
+    state.personId=id;state.income=JSON.parse(JSON.stringify(DEMO_I));state.expense=JSON.parse(JSON.stringify(DEMO_E));saveData();
+  }else{state.personId=persons[0].id;loadData(state.personId,state.year,state.month);}
+  renderAll();
+})();
+</script>
+</body>
+</html>
