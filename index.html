@@ -990,8 +990,8 @@ window.addEventListener('resize',()=>{
 (function init(){
   loadPersons();
   if(!persons.length){
-    const id='p'+Date.now();persons.push({id,name:'笠井翔太'});savePersons();
-    state.personId=id;state.income=JSON.parse(JSON.stringify(DEMO_I));state.expense=JSON.parse(JSON.stringify(DEMO_E));saveData();
+    const id='p'+Date.now();persons.push({id,name:'ユーザー1'});savePersons();
+    state.personId=id;state.income=[];state.expense=[];saveData();
   }else{state.personId=persons[0].id;loadData(state.personId,state.year,state.month);}
   renderAll();
 })();
