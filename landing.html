@@ -23,219 +23,86 @@ html{scroll-behavior:smooth}
 body{font-family:var(--font-body);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 a{text-decoration:none;color:inherit}
 img{max-width:100%}
-
-/* ── STICKY NAV ── */
-.nav{
-  position:fixed;top:0;left:0;right:0;z-index:100;
-  background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--border);
-  height:60px;display:flex;align-items:center;
-  padding:0 clamp(16px,4vw,48px);
-}
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:60px;display:flex;align-items:center;padding:0 clamp(16px,4vw,48px);}
 .nav-inner{max-width:1100px;width:100%;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
 .nav-logo{font-family:var(--font-brand);font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--text)}
 .nav-logo span{color:var(--teal)}
-.nav-cta{
-  padding:8px 22px;border-radius:8px;
-  background:var(--teal);color:#fff;
-  font-family:var(--font-brand);font-size:13px;font-weight:700;
-  transition:background .2s;
-}
+.nav-cta{padding:8px 22px;border-radius:8px;background:var(--teal);color:#fff;font-family:var(--font-brand);font-size:13px;font-weight:700;transition:background .2s;}
 .nav-cta:hover{background:var(--teal-d)}
-
-/* ── HERO ── */
-.hero{
-  padding:120px clamp(16px,4vw,48px) 80px;
-  max-width:1100px;margin:0 auto;
-  display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;
-  min-height:90vh;
-}
-.hero-text{}
-.hero-eyebrow{
-  display:inline-flex;align-items:center;gap:8px;
-  background:#f0fdf4;border:1px solid #bbf7d0;
-  color:#15803d;border-radius:100px;
-  font-size:12px;font-weight:700;letter-spacing:.05em;
-  padding:4px 14px;margin-bottom:24px;
-}
+.hero{padding:120px clamp(16px,4vw,48px) 80px;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;min-height:90vh;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:100px;font-size:12px;font-weight:700;letter-spacing:.05em;padding:4px 14px;margin-bottom:24px;}
 .hero-eyebrow::before{content:'●';font-size:8px;color:#22c55e}
-.hero-h1{
-  font-size:clamp(38px,5vw,60px);font-weight:900;
-  line-height:1.2;letter-spacing:-1.5px;
-  color:var(--text);margin-bottom:20px;
-}
+.hero-h1{font-size:clamp(38px,5vw,60px);font-weight:900;line-height:1.2;letter-spacing:-1.5px;color:var(--text);margin-bottom:20px;}
 .hero-h1 .accent{color:var(--teal)}
-.hero-sub{
-  font-size:clamp(14px,1.8vw,17px);color:var(--muted);
-  line-height:1.9;margin-bottom:36px;
-}
+.hero-sub{font-size:clamp(14px,1.8vw,17px);color:var(--muted);line-height:1.9;margin-bottom:36px;}
 .hero-btns{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-.btn-primary{
-  padding:14px 32px;border-radius:10px;
-  background:var(--teal);color:#fff;
-  font-family:var(--font-brand);font-size:15px;font-weight:700;
-  box-shadow:0 4px 16px rgba(13,148,136,.35);
-  transition:all .2s;
-}
-.btn-primary:hover{background:var(--teal-d);transform:translateY(-1px);box-shadow:0 6px 24px rgba(13,148,136,.4)}
-.btn-ghost{
-  padding:13px 24px;border-radius:10px;
-  border:1.5px solid var(--border);color:var(--text2);
-  font-size:14px;font-weight:500;transition:all .2s;
-}
+.btn-primary{padding:14px 32px;border-radius:10px;background:var(--teal);color:#fff;font-family:var(--font-brand);font-size:15px;font-weight:700;box-shadow:0 4px 16px rgba(13,148,136,.35);transition:all .2s;}
+.btn-primary:hover{background:var(--teal-d);transform:translateY(-1px)}
+.btn-ghost{padding:13px 24px;border-radius:10px;border:1.5px solid var(--border);color:var(--text2);font-size:14px;font-weight:500;transition:all .2s;}
 .btn-ghost:hover{border-color:var(--teal);color:var(--teal)}
 .hero-note{font-size:12px;color:var(--muted);margin-top:8px}
-
-/* ── APP MOCKUP ── */
 .hero-visual{position:relative;display:flex;justify-content:center;align-items:center}
-.mockup{
-  width:100%;max-width:460px;
-  background:#0f172a;border-radius:20px;
-  box-shadow:0 24px 80px rgba(0,0,0,.2);
-  overflow:hidden;position:relative;
-}
-.mockup-bar{
-  background:#1e293b;height:36px;display:flex;align-items:center;
-  padding:0 14px;gap:6px;
-}
+.mockup{width:100%;max-width:460px;background:#0f172a;border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.2);overflow:hidden;}
+.mockup-bar{background:#1e293b;height:36px;display:flex;align-items:center;padding:0 14px;gap:6px;}
 .mockup-dot{width:10px;height:10px;border-radius:50%}
 .mockup-dot:nth-child(1){background:#ef4444}
 .mockup-dot:nth-child(2){background:#f59e0b}
 .mockup-dot:nth-child(3){background:#22c55e}
 .mockup-body{padding:20px}
-.mkp-title{font-family:var(--font-brand);color:#94a3b8;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
-.mkp-sankey{
-  width:100%;height:180px;display:flex;align-items:flex-end;gap:4px;padding:8px 0;
-  position:relative;
-}
-.mkp-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
-.mkp-bar{border-radius:4px 4px 0 0;width:100%;transition:height .6s ease}
-.mkp-bar-label{font-size:9px;color:#64748b;font-family:var(--font-brand);white-space:nowrap}
-
-/* Sankey流れ線 */
-.mkp-flow{position:relative;width:100%;height:80px;margin:8px 0}
-.mkp-flow svg{width:100%;height:100%}
-
 .mkp-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .mkp-badge{font-size:10px;font-weight:700;font-family:var(--font-brand)}
 .mkp-amount{font-size:14px;font-weight:800;font-family:var(--font-brand)}
-.mkp-cats{display:flex;flex-direction:column;gap:6px;margin-top:12px}
-.mkp-cat{display:flex;align-items:center;gap:8px}
-.mkp-cat-bar-wrap{flex:1;height:6px;background:#1e293b;border-radius:3px;overflow:hidden}
-.mkp-cat-bar{height:100%;border-radius:3px}
-.mkp-cat-name{font-size:10px;color:#94a3b8;font-family:var(--font-brand);width:72px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mkp-cat-amt{font-size:10px;color:#64748b;font-family:var(--font-brand);width:40px;text-align:right}
-
-/* ── SECTION COMMON ── */
 .section{padding:80px clamp(16px,4vw,48px)}
 .section-inner{max-width:1100px;margin:0 auto}
-.section-label{
-  font-family:var(--font-brand);font-size:11px;font-weight:700;
-  letter-spacing:.15em;text-transform:uppercase;color:var(--teal);
-  margin-bottom:10px;text-align:center;
-}
-.section-title{
-  font-size:clamp(26px,4vw,38px);font-weight:900;
-  text-align:center;letter-spacing:-1px;margin-bottom:8px;
-}
+.section-label{font-family:var(--font-brand);font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal);margin-bottom:10px;text-align:center;}
+.section-title{font-size:clamp(26px,4vw,38px);font-weight:900;text-align:center;letter-spacing:-1px;margin-bottom:8px;}
 .section-sub{text-align:center;color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:56px}
-
-/* ── FEATURES ── */
 .features{background:var(--bg2)}
 .feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
-.feat-card{
-  background:#fff;border-radius:16px;padding:32px 28px;
-  box-shadow:var(--shadow);border:1px solid var(--border);
-  transition:box-shadow .2s,transform .2s;
-}
+.feat-card{background:#fff;border-radius:16px;padding:32px 28px;box-shadow:var(--shadow);border:1px solid var(--border);transition:box-shadow .2s,transform .2s;}
 .feat-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px)}
-.feat-icon{
-  width:48px;height:48px;border-radius:14px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:24px;margin-bottom:18px;
-}
+.feat-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
+.feat-icon svg{display:block;flex-shrink:0}
 .feat-icon.teal{background:rgba(13,148,136,.12)}
 .feat-icon.blue{background:#eff6ff}
 .feat-icon.purple{background:#f5f3ff}
 .feat-icon.orange{background:#fff7ed}
 .feat-name{font-size:17px;font-weight:700;margin-bottom:8px;color:var(--text)}
 .feat-desc{font-size:14px;color:var(--muted);line-height:1.8}
-
-/* ── STEPS ── */
 .steps{background:#fff}
-.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:0}
 .step-card{text-align:center;padding:8px}
-.step-num{
-  width:52px;height:52px;border-radius:50%;
-  background:var(--teal);color:#fff;
-  font-family:var(--font-brand);font-size:20px;font-weight:800;
-  display:flex;align-items:center;justify-content:center;
-  margin:0 auto 20px;
-  box-shadow:0 4px 16px rgba(13,148,136,.3);
-}
+.step-num{width:52px;height:52px;border-radius:50%;background:var(--teal);color:#fff;font-family:var(--font-brand);font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 4px 16px rgba(13,148,136,.3);}
 .step-title{font-size:17px;font-weight:700;margin-bottom:8px}
 .step-desc{font-size:14px;color:var(--muted);line-height:1.8}
-
-/* connector */
 .steps-flow{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;position:relative}
-.steps-flow::before{
-  content:'';position:absolute;top:26px;left:calc(16.67% + 10px);right:calc(16.67% + 10px);
-  height:2px;background:linear-gradient(90deg,var(--teal),rgba(13,148,136,.2));
-  z-index:0;
-}
-
-/* ── SOCIAL PROOF ── */
+.steps-flow::before{content:'';position:absolute;top:26px;left:calc(16.67% + 10px);right:calc(16.67% + 10px);height:2px;background:linear-gradient(90deg,var(--teal),rgba(13,148,136,.2));z-index:0;}
 .proof{background:var(--bg3);padding:64px clamp(16px,4vw,48px)}
 .proof-inner{max-width:800px;margin:0 auto;text-align:center}
-.proof-quote{
-  font-size:clamp(18px,3vw,24px);font-weight:700;line-height:1.7;
-  color:var(--text);margin-bottom:20px;letter-spacing:-.3px;
-}
+.proof-quote{font-size:clamp(18px,3vw,24px);font-weight:700;line-height:1.7;color:var(--text);margin-bottom:20px;letter-spacing:-.3px;}
 .proof-quote span{color:var(--teal);border-bottom:2px solid var(--teal-l)}
 .proof-stats{display:flex;justify-content:center;gap:48px;margin-top:40px}
 .stat{text-align:center}
 .stat-num{font-family:var(--font-brand);font-size:clamp(32px,5vw,48px);font-weight:800;color:var(--teal);line-height:1}
 .stat-label{font-size:13px;color:var(--muted);margin-top:4px}
-
-/* ── CTA BOTTOM ── */
-.cta-section{
-  padding:80px clamp(16px,4vw,48px);
-  background:linear-gradient(135deg,var(--teal-d) 0%,#0d9488 60%,#0891b2 100%);
-  text-align:center;
-}
+.cta-section{padding:80px clamp(16px,4vw,48px);background:linear-gradient(135deg,var(--teal-d) 0%,#0d9488 60%,#0891b2 100%);text-align:center;}
 .cta-title{font-size:clamp(26px,4vw,38px);font-weight:900;color:#fff;letter-spacing:-1px;margin-bottom:12px}
 .cta-sub{font-size:15px;color:rgba(255,255,255,.8);margin-bottom:36px;line-height:1.8}
-.btn-white{
-  padding:14px 36px;border-radius:10px;
-  background:#fff;color:var(--teal-d);
-  font-family:var(--font-brand);font-size:15px;font-weight:700;
-  box-shadow:0 4px 20px rgba(0,0,0,.15);
-  transition:all .2s;display:inline-block;
-}
-.btn-white:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.btn-white{padding:14px 36px;border-radius:10px;background:#fff;color:var(--teal-d);font-family:var(--font-brand);font-size:15px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:all .2s;display:inline-block;}
+.btn-white:hover{transform:translateY(-2px)}
 .cta-note{font-size:12px;color:rgba(255,255,255,.6);margin-top:12px}
-
-/* ── FOOTER ── */
-footer{
-  background:var(--text);padding:32px clamp(16px,4vw,48px);
-  text-align:center;
-}
+footer{background:var(--text);padding:32px clamp(16px,4vw,48px);text-align:center;}
 .footer-logo{font-family:var(--font-brand);font-size:18px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:6px}
 .footer-logo span{color:var(--teal-l)}
 .footer-copy{font-size:12px;color:#475569}
 .footer-copy a{color:#64748b}
-
-/* ── SCROLL REVEAL ── */
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
 .reveal.visible{opacity:1;transform:none}
-
-/* ── MOBILE ── */
 @media(max-width:768px){
   .hero{grid-template-columns:1fr;min-height:auto;padding:100px 20px 60px;gap:40px}
   .hero-visual{order:-1}
   .mockup{max-width:340px}
   .feat-grid{grid-template-columns:1fr}
-  .steps-grid,.steps-flow{grid-template-columns:1fr}
+  .steps-flow{grid-template-columns:1fr}
   .steps-flow::before{display:none}
   .proof-stats{gap:24px;flex-wrap:wrap}
   .hero-h1{font-size:36px}
@@ -247,16 +114,12 @@ footer{
 </style>
 </head>
 <body>
-
-<!-- STICKY NAV -->
 <nav class="nav">
   <div class="nav-inner">
     <a href="#" class="nav-logo">kakei<span>box</span></a>
     <a href="./index.html" class="nav-cta">アプリを開く</a>
   </div>
 </nav>
-
-<!-- HERO -->
 <section class="hero">
   <div class="hero-text reveal">
     <div class="hero-eyebrow">無料で使える・登録不要で試せる</div>
@@ -268,65 +131,49 @@ footer{
     </div>
     <p class="hero-note">無料 · クレジットカード不要</p>
   </div>
-
   <div class="hero-visual reveal">
     <div class="mockup">
       <div class="mockup-bar">
-        <div class="mockup-dot"></div>
-        <div class="mockup-dot"></div>
-        <div class="mockup-dot"></div>
+        <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
       </div>
       <div class="mockup-body">
         <div class="mkp-row">
           <span class="mkp-badge" style="color:#14b8a6">2026年 3月</span>
           <span class="mkp-amount" style="color:#f8fafc">残高 <span style="color:#14b8a6">+¥82,500</span></span>
         </div>
-
-        <!-- Sankey bar visualization -->
-        <div class="mkp-sankey" style="position:relative;padding:0;height:160px">
+        <div style="position:relative;height:160px">
           <svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
-            <!-- Income bar -->
             <rect x="0" y="20" width="60" height="120" rx="6" fill="#14b8a6" opacity=".9"/>
             <text x="30" y="16" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="#94a3b8">収入</text>
             <text x="30" y="154" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#64748b">¥350k</text>
-
-            <!-- Flow paths -->
             <path d="M60,30 C120,30 120,40 180,40" fill="none" stroke="#0f766e" stroke-width="18" opacity=".5"/>
             <path d="M60,60 C120,60 120,68 180,68" fill="none" stroke="#0d9488" stroke-width="14" opacity=".4"/>
             <path d="M60,90 C120,90 120,95 180,95" fill="none" stroke="#14b8a6" stroke-width="10" opacity=".35"/>
             <path d="M60,115 C120,115 120,118 180,118" fill="none" stroke="#5eead4" stroke-width="6" opacity=".3"/>
             <path d="M60,132 C120,132 120,134 180,134" fill="none" stroke="#99f6e4" stroke-width="4" opacity=".25"/>
-
-            <!-- Expense bars -->
             <rect x="180" y="30" width="36" height="18" rx="4" fill="#ef4444" opacity=".8"/>
             <rect x="180" y="56" width="36" height="14" rx="4" fill="#f97316" opacity=".8"/>
             <rect x="180" y="78" width="36" height="10" rx="4" fill="#eab308" opacity=".8"/>
             <rect x="180" y="96" width="36" height="6" rx="4" fill="#3b82f6" opacity=".8"/>
             <rect x="180" y="110" width="36" height="4" rx="4" fill="#8b5cf6" opacity=".8"/>
-
-            <!-- Category labels -->
             <text x="222" y="42" font-family="Outfit,sans-serif" font-size="10" fill="#94a3b8">住居 ¥95k</text>
             <text x="222" y="66" font-family="Outfit,sans-serif" font-size="10" fill="#94a3b8">食費 ¥62k</text>
             <text x="222" y="86" font-family="Outfit,sans-serif" font-size="10" fill="#94a3b8">交通 ¥28k</text>
             <text x="222" y="103" font-family="Outfit,sans-serif" font-size="10" fill="#94a3b8">光熱 ¥19k</text>
             <text x="222" y="116" font-family="Outfit,sans-serif" font-size="10" fill="#94a3b8">通信 ¥14k</text>
-
-            <!-- Savings -->
             <path d="M60,128 C120,128 340,128 380,90" fill="none" stroke="#14b8a6" stroke-width="20" opacity=".15"/>
             <rect x="352" y="72" width="44" height="36" rx="6" fill="#14b8a6" opacity=".25"/>
             <text x="374" y="88" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#14b8a6">貯蓄</text>
             <text x="374" y="100" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#5eead4">¥82k</text>
           </svg>
         </div>
-
-        <!-- Stats row -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
           <div style="background:#1e293b;border-radius:8px;padding:10px 12px">
-            <div style="font-size:9px;color:#64748b;font-family:Outfit,sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase">収入</div>
+            <div style="font-size:9px;color:#64748b;font-family:Outfit,sans-serif;font-weight:700;text-transform:uppercase">収入</div>
             <div style="font-size:16px;font-weight:800;color:#14b8a6;font-family:Outfit,sans-serif;margin-top:2px">¥350,000</div>
           </div>
           <div style="background:#1e293b;border-radius:8px;padding:10px 12px">
-            <div style="font-size:9px;color:#64748b;font-family:Outfit,sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase">支出</div>
+            <div style="font-size:9px;color:#64748b;font-family:Outfit,sans-serif;font-weight:700;text-transform:uppercase">支出</div>
             <div style="font-size:16px;font-weight:800;color:#f87171;font-family:Outfit,sans-serif;margin-top:2px">¥267,500</div>
           </div>
         </div>
@@ -334,8 +181,6 @@ footer{
     </div>
   </div>
 </section>
-
-<!-- FEATURES -->
 <section class="section features" id="features">
   <div class="section-inner">
     <p class="section-label reveal">Features</p>
@@ -343,30 +188,28 @@ footer{
     <p class="section-sub reveal">シンプルに使えて、ちゃんと役立つ。kakeibox はそこにこだわりました。</p>
     <div class="feat-grid">
       <div class="feat-card reveal">
-        <div class="feat-icon teal">📊</div>
+        <div class="feat-icon teal"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div>
         <div class="feat-name">収支をサンキー図で可視化</div>
         <p class="feat-desc">収入から各支出カテゴリへの資金の流れを、直感的なフロー図で確認できます。「どこにいくら使っているか」が一目でわかります。</p>
       </div>
       <div class="feat-card reveal">
-        <div class="feat-icon blue">☁️</div>
+        <div class="feat-icon blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div>
         <div class="feat-name">Googleアカウントで同期</div>
         <p class="feat-desc">Googleでログインするだけで、スマホ・PC・タブレットのどこからでも同じデータにアクセス。アカウント登録やメールアドレスの入力は不要です。</p>
       </div>
       <div class="feat-card reveal">
-        <div class="feat-icon purple">🔄</div>
+        <div class="feat-icon purple"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
         <div class="feat-name">定期項目・繰越金の自動処理</div>
         <p class="feat-desc">毎月の家賃・サブスクなどの固定費を一度登録すれば、以後は自動で適用。前月の収支差額は翌月に繰越金として自動セットされます。</p>
       </div>
       <div class="feat-card reveal">
-        <div class="feat-icon orange">⚙️</div>
+        <div class="feat-icon orange"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
         <div class="feat-name">カスタムカテゴリ</div>
         <p class="feat-desc">キーワードを設定するだけで、入力した項目が自動的に分類されます。カテゴリ名・色・キーワードは自由に追加・編集が可能です。</p>
       </div>
     </div>
   </div>
 </section>
-
-<!-- HOW IT WORKS -->
 <section class="section steps" id="how">
   <div class="section-inner">
     <p class="section-label reveal">How it works</p>
@@ -391,51 +234,31 @@ footer{
     </div>
   </div>
 </section>
-
-<!-- PROOF / STATS -->
 <section class="proof reveal">
   <div class="proof-inner">
     <p class="proof-quote">「毎月どこに使ったか、やっと<span>全部わかる</span>ようになった」</p>
     <div class="proof-stats">
-      <div class="stat reveal">
-        <div class="stat-num">無料</div>
-        <div class="stat-label">すべての機能が無料</div>
-      </div>
-      <div class="stat reveal">
-        <div class="stat-num">0秒</div>
-        <div class="stat-label">登録なしで即スタート</div>
-      </div>
-      <div class="stat reveal">
-        <div class="stat-num">∞</div>
-        <div class="stat-label">端末をまたいで同期</div>
-      </div>
+      <div class="stat reveal"><div class="stat-num">無料</div><div class="stat-label">すべての機能が無料</div></div>
+      <div class="stat reveal"><div class="stat-num">0秒</div><div class="stat-label">登録なしで即スタート</div></div>
+      <div class="stat reveal"><div class="stat-num">∞</div><div class="stat-label">端末をまたいで同期</div></div>
     </div>
   </div>
 </section>
-
-<!-- CTA BOTTOM -->
 <section class="cta-section reveal">
   <h2 class="cta-title">まず、試してみてください。</h2>
   <p class="cta-sub">無料で使えます。登録なしでゲストとして試すこともできます。<br>クレジットカードは不要です。</p>
   <a href="./index.html" class="btn-white">kakeibox を開く →</a>
   <p class="cta-note">ゲストモードはローカル保存。Googleログインでクラウド同期。</p>
 </section>
-
-<!-- FOOTER -->
 <footer>
   <div class="footer-logo">kakei<span>box</span></div>
   <p class="footer-copy">© 2026 kakeibox · <a href="./index.html">アプリを開く</a></p>
 </footer>
-
 <script>
-// Scroll reveal
 const io = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
-  });
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 </script>
-
 </body>
 </html>
