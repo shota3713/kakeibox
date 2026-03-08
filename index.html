@@ -222,6 +222,44 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 #tt{position:fixed;background:rgba(15,23,42,.93);color:#fff;padding:8px 13px;
   border-radius:8px;font-size:12px;pointer-events:none;z-index:9999;
   opacity:0;transition:opacity .15s;line-height:1.6;max-width:220px}
+
+/* ── CATEGORY SETTINGS ── */
+.catset-box{width:520px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.catset-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.catset-tabs{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0}
+.catset-tab{flex:1;padding:7px;font-size:13px;font-weight:700;border:none;cursor:pointer;
+  background:transparent;font-family:inherit;color:var(--muted);transition:all .15s}
+.catset-tab.on{background:var(--income);color:#fff}
+#catset-list{overflow-y:auto;flex:1;margin-top:10px;padding-right:2px}
+.cat-row{padding:10px 0;border-bottom:1px solid var(--border)}
+.cat-row-top{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.cat-color{width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;padding:2px;flex-shrink:0}
+.cat-name-inp{flex:1;padding:5px 9px;border:1px solid var(--border);border-radius:7px;
+  font-size:13px;font-family:inherit;outline:none}
+.cat-name-inp:focus{border-color:var(--income)}
+.cat-name-inp[readonly]{opacity:.55;cursor:default}
+.cat-move{background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 5px;line-height:1}
+.cat-move:hover:not(:disabled){color:var(--text)}
+.cat-move:disabled{opacity:.25;cursor:default}
+.cat-del-btn{background:none;border:none;cursor:pointer;color:#fca5a5;font-size:13px;padding:2px 6px;line-height:1}
+.cat-del-btn:hover:not(:disabled){color:var(--expense)}
+.cat-del-btn:disabled{opacity:.25;cursor:default}
+.cat-tags{display:flex;flex-wrap:wrap;align-items:center;gap:5px;min-height:26px}
+.cat-tag{display:inline-flex;align-items:center;gap:3px;background:#f0fdfa;
+  border:1px solid #99f6e4;border-radius:20px;padding:2px 8px 2px 10px;font-size:11px;color:#0f766e}
+.cat-tag-x{background:none;border:none;cursor:pointer;color:#5eead4;font-size:10px;padding:0 2px;line-height:1}
+.cat-tag-x:hover{color:#0f766e}
+.cat-kw-inp{border:1px dashed #94a3b8;border-radius:20px;padding:2px 10px;font-size:11px;
+  font-family:inherit;outline:none;min-width:90px;max-width:140px;background:transparent;color:var(--text)}
+.cat-kw-inp:focus{border-color:var(--income)}
+/* カテゴリプレビュー（項目追加モーダル） */
+#m-cat-preview{display:none;align-items:center;gap:6px;margin-top:8px;
+  padding:5px 10px;background:#f0fdfa;border-radius:8px;font-size:12px;color:#0f766e}
+.m-cat-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+@media(max-width:640px){
+  .catset-box{width:95vw;max-height:88vh}
+  .cat-name-inp{font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -262,6 +300,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   <div class="nav-right">
     <select class="psel" id="sel-p"></select>
     <button class="btn-np" id="btn-np">＋ 人物</button>
+    <button class="nb" id="btn-cat-settings" onclick="openCatSettings()" title="カテゴリ設定">⚙</button>
     <div id="auth-area"></div>
   </div>
 </header>
@@ -377,8 +416,14 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <hr class="m-hr">
     <p style="font-size:12px;color:#64748b;margin-bottom:8px">新しく作る</p>
     <div class="m-row">
-      <input class="m-inp" id="m-inp" placeholder="項目名を入力" onkeydown="if(event.key==='Enter')addCustom()">
+      <input class="m-inp" id="m-inp" placeholder="項目名を入力"
+        onkeydown="if(event.key==='Enter')addCustom()"
+        oninput="updateCatPreview()">
       <button class="m-ok" onclick="addCustom()">追加</button>
+    </div>
+    <div id="m-cat-preview">
+      <span class="m-cat-dot" id="m-cat-dot"></span>
+      <span id="m-cat-label"></span>に分類されます
     </div>
     <button class="m-close" onclick="closeModal()">閉じる</button>
   </div>
@@ -395,6 +440,25 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <button class="m-close" onclick="closeAuthModal()">閉じる</button>
   </div>
 </div>
+<!-- ── CATEGORY SETTINGS MODAL ── -->
+<div class="ov" id="catset-ov" onclick="if(event.target===this)closeCatSettings()">
+  <div class="mbox catset-box">
+    <div class="catset-hd">
+      <div class="m-title" style="margin:0">カテゴリ設定</div>
+      <button class="btn-x" style="font-size:18px;color:#94a3b8;padding:2px 6px" onclick="closeCatSettings()">✕</button>
+    </div>
+    <div class="catset-tabs">
+      <button class="catset-tab on" id="cst-income"  onclick="switchCatTab('income')">収入カテゴリ</button>
+      <button class="catset-tab"   id="cst-expense" onclick="switchCatTab('expense')">支出カテゴリ</button>
+    </div>
+    <div id="catset-list"></div>
+    <button class="btn-add" onclick="addCatRow()" style="margin-top:10px">＋ カテゴリを追加</button>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="m-close" style="margin:0;flex:1;font-size:12px" onclick="resetCats()">デフォルトに戻す</button>
+      <button class="m-ok"    style="flex:2"                          onclick="saveCatsAndClose()">保存して閉じる</button>
+    </div>
+  </div>
+</div>
 <div id="tt"></div>
 
 
@@ -402,7 +466,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 // ════════════════════════════════════════
 //  CATEGORY RULES
 // ════════════════════════════════════════
-const INCOME_CATS = [
+const DEFAULT_INCOME_CATS = [
   {name:'給与所得',   color:'#0f766e', keys:['給与','ボーナス','賞与','報酬']},
   {name:'事業所得',   color:'#0d9488', keys:['副業','事業','自営','フリー','雑収入']},
   {name:'不動産所得', color:'#14b8a6', keys:['家賃','地代','駐車場','不動産']},
@@ -411,7 +475,7 @@ const INCOME_CATS = [
   {name:'繰越金',     color:'#96E9DA', keys:['繰越','前月']},
   {name:'その他収入', color:'#BDF3EC', keys:[]},
 ];
-const EXPENSE_CATS = [
+const DEFAULT_EXPENSE_CATS = [
   {name:'住居費',       color:'#B91C1C', keys:['家賃','住宅','管理費','修繕','賃料']},
   {name:'光熱費',       color:'#DC2626', keys:['電気','ガス','水道','光熱']},
   {name:'食費',         color:'#EF4444', keys:['食費','食料','外食','スーパー','弁当']},
@@ -419,9 +483,11 @@ const EXPENSE_CATS = [
   {name:'交通費',       color:'#F77B7B', keys:['交通','電車','バス','ガソリン','高速','駐車']},
   {name:'医療・保険',   color:'#FA9797', keys:['医療','病院','薬','保険','健康']},
   {name:'娯楽・教育',   color:'#FCB3B3', keys:['娯楽','趣味','旅行','映画','教育','学費','本','書籍','サブスク']},
-  {name:'決済サービス', color:'#FECECE', keys:['クレジット','ペイ','カード','Pay','pay','paidy','Paidy']},
+  {name:'決済サービス', color:'#FECECE', keys:['クレジット','ペイ','カード','Pay','pay','paidy','Paidy'], isCredit:true},
   {name:'雑費',         color:'#9ca3af', keys:[]},
 ];
+let INCOME_CATS  = JSON.parse(JSON.stringify(DEFAULT_INCOME_CATS));
+let EXPENSE_CATS = JSON.parse(JSON.stringify(DEFAULT_EXPENSE_CATS));
 const INCOME_PRESETS  = ['給与','ボーナス','雑収入','前月繰越金','家賃収入','副業収入','投資収益','敷金返還','その他収入'];
 const EXPENSE_PRESETS = ['家賃','食費','電気代','ガス代','水道代','通信費','交通費','医療費','保険料','クレジットカード利用額','ペイディー','娯楽費','被服費','日用品','教育費','雑支出'];
 const DEMO_I = [{name:'給与',amount:270000},{name:'雑収入',amount:100000},{name:'前月繰越金',amount:20000},{name:'ゆいなからの家賃等',amount:40368},{name:'投資してる資産',amount:31000},{name:'帰ってきた敷金',amount:32000}];
@@ -443,6 +509,17 @@ let persons=[], modalType='income', currentUser=null, guestMode=false;
 // ════════════════════════════════════════
 //  STORAGE
 // ════════════════════════════════════════
+function saveCats(){
+  localStorage.setItem('kb_cats',JSON.stringify({income:INCOME_CATS,expense:EXPENSE_CATS}));
+  if(currentUser)fsPush(uidPath('meta','categories'),{income:INCOME_CATS,expense:EXPENSE_CATS});
+}
+function loadCats(){
+  const s=localStorage.getItem('kb_cats');if(!s)return;
+  try{const d=JSON.parse(s);
+    if(d.income&&d.income.length)INCOME_CATS=d.income;
+    if(d.expense&&d.expense.length)EXPENSE_CATS=d.expense;
+  }catch(e){}
+}
 function savePersons(){if(guestMode)return;localStorage.setItem('kb_persons',JSON.stringify(persons));if(currentUser)fsyncPersons();}
 function loadPersons(){const s=localStorage.getItem('kb_persons');persons=s?JSON.parse(s):[]}
 function dKey(pid,y,m){return `kb_${pid}_${y}_${String(m).padStart(2,'0')}`}
@@ -651,6 +728,7 @@ function openModal(type){
   document.getElementById('m-title').textContent=type==='income'?'収入項目を追加':'支出項目を追加';
   document.getElementById('m-grid').innerHTML=presets.map(p=>`<button class="chip" onclick="addPreset('${p}')">${p}</button>`).join('');
   document.getElementById('m-inp').value='';
+  document.getElementById('m-cat-preview').style.display='none';
   document.getElementById('modal-ov').classList.add('open');
   document.body.style.overflow='hidden';
   setTimeout(()=>document.getElementById('m-inp').focus(),200);
@@ -671,7 +749,8 @@ function loadAnnualData(){
     const d=JSON.parse(s);
     const inc=(d.income||[]).reduce((t,x)=>t+x.amount,0);
     const exp=(d.expense||[]).reduce((t,x)=>t+x.amount,0);
-    const credit=(d.expense||[]).filter(x=>categorize(x.name,EXPENSE_CATS).name==='決済サービス').reduce((t,x)=>t+x.amount,0);
+    const creditCat=EXPENSE_CATS.find(c=>c.isCredit)||EXPENSE_CATS[EXPENSE_CATS.length-1];
+    const credit=(d.expense||[]).filter(x=>categorize(x.name,EXPENSE_CATS).name===creditCat.name).reduce((t,x)=>t+x.amount,0);
     const cats={};
     (d.expense||[]).forEach(x=>{const cn=categorize(x.name,EXPENSE_CATS).name;cats[cn]=(cats[cn]||0)+x.amount;});
     return{m,income:inc,expense:exp,balance:inc-exp,credit,cats,raw:d};
@@ -1009,6 +1088,15 @@ function fsyncData(pid,y,m){const s=localStorage.getItem(dKey(pid,y,m));if(s)fsP
 function fsyncRecurring(pid){const s=localStorage.getItem(recurKey(pid));if(s)fsPush(uidPath('recurring',pid),JSON.parse(s));}
 
 async function syncFromFirestore(){
+  // カテゴリ同期
+  const catData=await fsPull(uidPath('meta','categories'));
+  if(catData&&catData.income&&catData.income.length){
+    INCOME_CATS=catData.income;EXPENSE_CATS=catData.expense||EXPENSE_CATS;
+    localStorage.setItem('kb_cats',JSON.stringify({income:INCOME_CATS,expense:EXPENSE_CATS}));
+  }else{
+    const lc=localStorage.getItem('kb_cats');
+    if(lc)try{fsPush(uidPath('meta','categories'),JSON.parse(lc));}catch(e){}
+  }
   const pData=await fsPull(uidPath('meta','persons'));
   if(pData&&pData.persons&&pData.persons.length){
     persons=pData.persons;
@@ -1108,6 +1196,136 @@ auth.onAuthStateChanged(async user=>{
 });
 
 // ════════════════════════════════════════
+//  CATEGORY SETTINGS
+// ════════════════════════════════════════
+let catEditTab='income', catDraft=null;
+
+function openCatSettings(){
+  catDraft={income:JSON.parse(JSON.stringify(INCOME_CATS)),expense:JSON.parse(JSON.stringify(EXPENSE_CATS))};
+  catEditTab='income';
+  switchCatTab('income');
+  document.getElementById('catset-ov').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeCatSettings(){
+  document.getElementById('catset-ov').classList.remove('open');
+  document.body.style.overflow='';
+  catDraft=null;
+}
+function switchCatTab(tab){
+  catEditTab=tab;
+  document.getElementById('cst-income').classList.toggle('on',tab==='income');
+  document.getElementById('cst-expense').classList.toggle('on',tab==='expense');
+  renderCatList();
+}
+function renderCatList(){
+  const cats=catDraft[catEditTab];
+  const list=document.getElementById('catset-list');
+  list.innerHTML='';
+  cats.forEach((cat,idx)=>{
+    const isLast=idx===cats.length-1;
+    const row=document.createElement('div');row.className='cat-row';
+    const top=document.createElement('div');top.className='cat-row-top';
+    top.innerHTML=
+      `<input type="color" class="cat-color" value="${esc(cat.color||'#94a3b8')}"
+        oninput="catDraft['${catEditTab}'][${idx}].color=this.value">
+       <input class="cat-name-inp" type="text" value="${esc(cat.name)}" placeholder="カテゴリ名"
+        oninput="catDraft['${catEditTab}'][${idx}].name=this.value"
+        ${isLast?'readonly':''}>
+       <button class="cat-move" onclick="moveCat(${idx},-1)" ${idx===0?'disabled':''}>▲</button>
+       <button class="cat-move" onclick="moveCat(${idx},1)"  ${idx>=cats.length-2?'disabled':''}>▼</button>
+       <button class="cat-del-btn" onclick="deleteCat(${idx})" ${isLast?'disabled':''}>✕</button>`;
+    const tagWrap=document.createElement('div');tagWrap.className='cat-tags';tagWrap.id='ctags-'+idx;
+    buildTagsInto(tagWrap,idx,cat.keys,isLast);
+    row.append(top,tagWrap);list.appendChild(row);
+  });
+}
+function buildTagsInto(el,ci,keys,isLast){
+  el.innerHTML='';
+  keys.forEach((k,ki)=>{
+    const chip=document.createElement('span');chip.className='cat-tag';
+    chip.innerHTML=`${esc(k)}<button class="cat-tag-x" onclick="removeKey(${ci},${ki})">✕</button>`;
+    el.appendChild(chip);
+  });
+  if(!isLast){
+    const inp=document.createElement('input');
+    inp.className='cat-kw-inp';inp.placeholder='キーワード追加';
+    inp.onkeydown=e=>{
+      if(e.key==='Enter'||e.key===','){
+        e.preventDefault();
+        const v=inp.value.replace(/,/g,'').trim();
+        if(v&&!catDraft[catEditTab][ci].keys.includes(v)){
+          catDraft[catEditTab][ci].keys.push(v);
+          const wrap=document.getElementById('ctags-'+ci);
+          buildTagsInto(wrap,ci,catDraft[catEditTab][ci].keys,false);
+          setTimeout(()=>{const ni=wrap.querySelector('.cat-kw-inp');if(ni)ni.focus();},0);
+        }else inp.value='';
+      }
+    };
+    el.appendChild(inp);
+  }
+}
+function removeKey(ci,ki){
+  catDraft[catEditTab][ci].keys.splice(ki,1);
+  const wrap=document.getElementById('ctags-'+ci);
+  const isLast=ci===catDraft[catEditTab].length-1;
+  buildTagsInto(wrap,ci,catDraft[catEditTab][ci].keys,isLast);
+}
+function moveCat(idx,dir){
+  const cats=catDraft[catEditTab];
+  const t=idx+dir;
+  if(t<0||t>=cats.length-1)return;
+  [cats[idx],cats[t]]=[cats[t],cats[idx]];renderCatList();
+}
+function deleteCat(idx){
+  const cats=catDraft[catEditTab];
+  if(idx===cats.length-1)return;
+  if(!confirm(`「${cats[idx].name}」を削除しますか？`))return;
+  cats.splice(idx,1);renderCatList();
+}
+function addCatRow(){
+  const cats=catDraft[catEditTab];
+  const defColor=catEditTab==='income'?'#0d9488':'#EF4444';
+  cats.splice(cats.length-1,0,{name:'',color:defColor,keys:[]});
+  renderCatList();
+  setTimeout(()=>{
+    const inps=document.querySelectorAll('.cat-name-inp');
+    if(inps[cats.length-2])inps[cats.length-2].focus();
+  },50);
+}
+function resetCats(){
+  if(!confirm('カテゴリをデフォルトに戻しますか？'))return;
+  catDraft={
+    income:JSON.parse(JSON.stringify(DEFAULT_INCOME_CATS)),
+    expense:JSON.parse(JSON.stringify(DEFAULT_EXPENSE_CATS))
+  };
+  renderCatList();
+}
+function saveCatsAndClose(){
+  for(const type of ['income','expense']){
+    const empty=catDraft[type].slice(0,-1).filter(c=>!c.name.trim());
+    if(empty.length){alert('カテゴリ名が空の項目があります');switchCatTab(type);return;}
+  }
+  INCOME_CATS=catDraft.income;
+  EXPENSE_CATS=catDraft.expense;
+  saveCats();
+  closeCatSettings();
+  if(state.view==='annual')drawAnnualView();else recalc();
+}
+
+// ── 項目入力時のカテゴリプレビュー ──
+function updateCatPreview(){
+  const v=document.getElementById('m-inp').value.trim();
+  const cats=modalType==='income'?INCOME_CATS:EXPENSE_CATS;
+  const el=document.getElementById('m-cat-preview');
+  if(!v){el.style.display='none';return;}
+  const cat=categorize(v,cats);
+  document.getElementById('m-cat-dot').style.background=cat.color;
+  document.getElementById('m-cat-label').textContent=cat.name;
+  el.style.display='flex';
+}
+
+// ════════════════════════════════════════
 //  EVENTS
 // ════════════════════════════════════════
 document.getElementById('btn-prev').onclick=prevMonth;
@@ -1134,9 +1352,10 @@ window.addEventListener('resize',()=>{
 (function init(){
   const DATA_VERSION='v2';
   if(localStorage.getItem('kb_version')!==DATA_VERSION){
-    Object.keys(localStorage).filter(k=>k.startsWith('kb_')).forEach(k=>localStorage.removeItem(k));
+    Object.keys(localStorage).filter(k=>k.startsWith('kb_')&&k!=='kb_cats').forEach(k=>localStorage.removeItem(k));
     localStorage.setItem('kb_version',DATA_VERSION);
   }
+  loadCats();
   // データ初期化はauth.onAuthStateChangedまたはstartGuestが担当
 })();
 </script>
