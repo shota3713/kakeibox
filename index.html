@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>家計簿</title>
+<title>kakeibox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -13,17 +16,19 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;
-  --income:#3DCAB1;--expense:#EF4444;--balance:#9CA3AF;--center:#374151;
-  --nav:#1e293b;--navfg:#f8fafc;--r:12px;--sh:0 1px 6px rgba(0,0,0,.1);
+  --income:#0d9488;--income-light:#14b8a6;--income-dark:#0f766e;--expense:#EF4444;--balance:#9CA3AF;--center:#374151;
+  --nav:#0f172a;--navfg:#f8fafc;--r:12px;--sh:0 1px 6px rgba(0,0,0,.1);
+  --font-brand:'Outfit',sans-serif;
+  --font-body:'Noto Sans JP','Hiragino Kaku Gothic ProN','Hiragino Sans','Meiryo',sans-serif;
 }
-body{font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Meiryo',sans-serif;
-  background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh}
 
 /* ── NAV ── */
 .nav{position:sticky;top:0;z-index:100;background:var(--nav);
   display:flex;align-items:center;justify-content:space-between;
   padding:0 20px;height:52px;box-shadow:0 2px 8px rgba(0,0,0,.25);gap:12px}
-.nav-brand{font-size:15px;font-weight:700;color:var(--navfg);white-space:nowrap}
+.nav-brand{font-family:var(--font-brand);font-size:18px;font-weight:800;color:var(--navfg);white-space:nowrap;letter-spacing:-0.5px}
+.nav-brand span{color:var(--income)}
 .nav-center{display:flex;align-items:center;gap:6px}
 .nav-right{display:flex;align-items:center;gap:8px}
 .nb{background:rgba(255,255,255,.13);border:none;border-radius:6px;color:var(--navfg);
@@ -81,7 +86,7 @@ table.bt th{font-size:12px;font-weight:700;padding:7px 8px;border:1px solid var(
 table.bt td{font-size:13px;padding:5px 7px;border:1px solid #eef0f3;vertical-align:middle}
 table.bt tr:hover td{background:#f8fafc}
 table.bt td input{border:none;outline:none;width:100%;font-size:13px;font-family:inherit;background:transparent}
-table.bt td input:focus{background:#eff6ff;border-radius:2px}
+table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 .td-a{width:108px;text-align:right}.td-a input{text-align:right}.td-x{width:24px;text-align:center}
 .tr-tot td{font-weight:700;background:#f8fafc;border-top:2px solid var(--text)}
 .btn-x{background:none;border:none;cursor:pointer;color:#fca5a5;font-size:13px;padding:1px 3px}
@@ -95,7 +100,7 @@ table.bt td input:focus{background:#eff6ff;border-radius:2px}
 .btn-action:hover{border-color:var(--income);color:var(--income)}
 .btn-add{width:100%;margin-top:8px;padding:7px;border:1px dashed #94a3b8;border-radius:8px;
   cursor:pointer;font-size:12px;color:var(--muted);background:transparent;font-family:inherit;transition:all .2s}
-.btn-add:hover{background:#eff6ff;border-color:var(--income);color:var(--income)}
+.btn-add:hover{background:#f0fdfa;border-color:var(--income);color:var(--income)}
 
 /* ── SANKEY ── */
 .sk-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:22px 22px 26px}
@@ -142,13 +147,73 @@ table.bt td input:focus{background:#eff6ff;border-radius:2px}
   font-size:13px;font-family:inherit;outline:none}
 .m-inp:focus{border-color:var(--income)}
 .m-ok,.m-close{padding:8px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;border:none}
-.m-ok{background:var(--income);color:#fff}.m-ok:hover{background:#1e40af}
+.m-ok{background:var(--income);color:#fff}.m-ok:hover{background:var(--income-dark)}
 .m-close{background:#f1f5f9;color:var(--muted);margin-top:12px;width:100%}
 .m-close:hover{background:#e2e8f0}
 .btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 16px;background:#fff;border:1.5px solid #dadce0;border-radius:8px;font-size:14px;font-weight:600;color:#3c4043;cursor:pointer;font-family:inherit;transition:background .15s,box-shadow .15s}
 .btn-google:hover{background:#f8f9fa;box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .btn-google:disabled{opacity:.6;cursor:not-allowed}
 
+/* ── MOBILE ── */
+@media(max-width:640px){
+  /* Nav: 2段レイアウト */
+  .nav{flex-wrap:wrap;height:auto;padding:8px 12px;row-gap:6px}
+  .nav-brand{font-size:16px;order:1}
+  .nav-right{order:2;gap:6px}
+  .nav-center{order:3;width:100%;justify-content:center;padding-bottom:2px}
+  .btn-np{display:none}
+  .nsel{font-size:12px;padding:3px 5px}
+  .psel{font-size:12px;max-width:100px}
+  .btn-np-visible{display:none}
+  /* Summary */
+  .sum-grid{grid-template-columns:1fr 1fr}
+  .sum-val{font-size:18px}
+  .sum-lbl{font-size:10px}
+  .sum-card{padding:12px 14px}
+  /* Tables */
+  .td-a{width:80px}
+  table.bt th,table.bt td{padding:4px 5px;font-size:12px}
+  table.bt td input{font-size:12px}
+  .card{padding:14px 12px}
+  /* Action bar */
+  .action-bar{flex-wrap:wrap;gap:6px}
+  /* Sankey */
+  .sk-card{padding:14px 12px}
+  .sk-top{flex-direction:column;align-items:flex-start;gap:6px}
+  /* Wrap */
+  .wrap{padding:14px 10px 80px}
+  /* Annual chart */
+  .chart-card{padding:14px 12px}
+  /* Guest banner */
+  #guest-banner{font-size:11px;padding:7px 12px}
+}
+@media(max-width:400px){
+  .sum-grid{grid-template-columns:1fr}
+  .nav-brand{font-size:15px}
+}
+
+
+/* ── WELCOME SCREEN ── */
+#welcome-ov{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 60%,#0f172a 100%);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px}
+#welcome-ov.hidden{display:none}
+#welcome-box{background:rgba(255,255,255,.97);border-radius:28px;padding:48px 40px 40px;max-width:400px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.1)}
+.wlc-logo{margin-bottom:20px;display:flex;justify-content:center}
+.wlc-brand{font-family:var(--font-brand);font-size:36px;font-weight:800;color:#0f172a;letter-spacing:-1.5px;margin-bottom:6px;line-height:1}
+.wlc-brand span{color:var(--income)}
+.wlc-tagline{font-size:13px;color:var(--muted);margin-bottom:32px;line-height:1.7;font-weight:400}
+.wlc-divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:#cbd5e1;font-size:11px;letter-spacing:.05em}
+.wlc-divider::before,.wlc-divider::after{content:'';flex:1;height:1px;background:#e2e8f0}
+.btn-guest{width:100%;padding:12px;background:transparent;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;color:#64748b;cursor:pointer;font-family:var(--font-body);font-weight:500;transition:all .15s;letter-spacing:.01em}
+.btn-guest:hover{background:#f8fafc;border-color:#cbd5e1;color:#475569}
+.wlc-note{font-size:11px;color:#94a3b8;margin-top:14px;line-height:1.6}
+#welcome-err{color:#ef4444;font-size:12px;min-height:16px;margin-bottom:10px}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 16px;background:#fff;border:1.5px solid #dadce0;border-radius:10px;font-size:14px;font-weight:600;color:#3c4043;cursor:pointer;font-family:var(--font-body);transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.btn-google:hover{background:#f8f9fa;box-shadow:0 2px 8px rgba(0,0,0,.12);border-color:#c5c7ca}
+.btn-google:disabled{opacity:.6;cursor:not-allowed}
+/* ── GUEST BANNER ── */
+#guest-banner{display:none;position:sticky;top:52px;z-index:99;background:linear-gradient(90deg,#fffbeb,#fef9c3);border-bottom:1px solid #fde68a;padding:9px 20px;font-size:12px;color:#92400e;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;font-weight:500}
+#guest-banner button{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:12px;cursor:pointer;font-family:var(--font-body);font-weight:700;box-shadow:0 1px 4px rgba(217,119,6,.3);transition:opacity .15s}
+#guest-banner button:hover{opacity:.88}
 /* ── TOOLTIP ── */
 #tt{position:fixed;background:rgba(15,23,42,.93);color:#fff;padding:8px 13px;
   border-radius:8px;font-size:12px;pointer-events:none;z-index:9999;
@@ -157,9 +222,32 @@ table.bt td input:focus{background:#eff6ff;border-radius:2px}
 </head>
 <body>
 
+<!-- ── WELCOME SCREEN ── -->
+<div id="welcome-ov">
+  <div id="welcome-box">
+    <div class="wlc-logo">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+        <rect width="56" height="56" rx="16" fill="#0f172a"/>
+        <rect x="10" y="34" width="9" height="13" rx="3" fill="#14b8a6"/>
+        <rect x="23" y="24" width="9" height="23" rx="3" fill="#14b8a6" opacity=".85"/>
+        <rect x="36" y="14" width="9" height="33" rx="3" fill="#14b8a6" opacity=".6"/>
+      </svg>
+    </div>
+    <div class="wlc-brand">kakei<span>box</span></div>
+    <p class="wlc-tagline">収支を記録して、お金の流れを可視化。<br>クラウドで複数端末からアクセスできます。</p>
+    <div id="welcome-err"></div>
+    <button class="btn-google" id="welcome-google-btn" onclick="doGoogleSignInFromWelcome()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Googleでログイン
+    </button>
+    <div class="wlc-divider">または</div>
+    <button class="btn-guest" onclick="startGuest()">ゲストとして試す</button>
+    <p class="wlc-note">※ゲストモードではデータは保存されません</p>
+  </div>
+</div>
 <!-- ── NAV ── -->
 <header class="nav">
-  <div class="nav-brand">💰 家計簿</div>
+  <div class="nav-brand">kakei<span>box</span></div>
   <div class="nav-center">
     <button class="nb" id="btn-prev">&#8249;</button>
     <select class="nsel" id="sel-y"></select>
@@ -172,6 +260,11 @@ table.bt td input:focus{background:#eff6ff;border-radius:2px}
     <div id="auth-area"></div>
   </div>
 </header>
+<!-- ── GUEST BANNER ── -->
+<div id="guest-banner">
+  ゲストモード — データは保存されません
+  <button onclick="openAuthModal()">ログインして保存する</button>
+</div>
 
 <!-- ── VIEW TABS ── -->
 <div class="vtab-bar">
@@ -299,16 +392,17 @@ table.bt td input:focus{background:#eff6ff;border-radius:2px}
 </div>
 <div id="tt"></div>
 
+
 <script>
 // ════════════════════════════════════════
 //  CATEGORY RULES
 // ════════════════════════════════════════
 const INCOME_CATS = [
-  {name:'給与所得',   color:'#1A9E88', keys:['給与','ボーナス','賞与','報酬']},
-  {name:'事業所得',   color:'#25B49E', keys:['副業','事業','自営','フリー','雑収入']},
-  {name:'不動産所得', color:'#3DCAB1', keys:['家賃','地代','駐車場','不動産']},
-  {name:'一時所得',   color:'#56D4BE', keys:['敷金','礼金','一時','保険金','還付']},
-  {name:'投資所得',   color:'#74DFCC', keys:['投資','配当','株','利息','資産']},
+  {name:'給与所得',   color:'#0f766e', keys:['給与','ボーナス','賞与','報酬']},
+  {name:'事業所得',   color:'#0d9488', keys:['副業','事業','自営','フリー','雑収入']},
+  {name:'不動産所得', color:'#14b8a6', keys:['家賃','地代','駐車場','不動産']},
+  {name:'一時所得',   color:'#2dd4bf', keys:['敷金','礼金','一時','保険金','還付']},
+  {name:'投資所得',   color:'#5eead4', keys:['投資','配当','株','利息','資産']},
   {name:'繰越金',     color:'#96E9DA', keys:['繰越','前月']},
   {name:'その他収入', color:'#BDF3EC', keys:[]},
 ];
@@ -339,16 +433,16 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 const now = new Date();
 let state = {personId:null, year:now.getFullYear(), month:now.getMonth()+1,
              income:[], expense:[], mode:'simple', view:'monthly', ri:[], re:[]};
-let persons=[], modalType='income', currentUser=null;
+let persons=[], modalType='income', currentUser=null, guestMode=false;
 
 // ════════════════════════════════════════
 //  STORAGE
 // ════════════════════════════════════════
-function savePersons(){localStorage.setItem('kb_persons',JSON.stringify(persons));if(currentUser)fsyncPersons();}
+function savePersons(){if(guestMode)return;localStorage.setItem('kb_persons',JSON.stringify(persons));if(currentUser)fsyncPersons();}
 function loadPersons(){const s=localStorage.getItem('kb_persons');persons=s?JSON.parse(s):[]}
 function dKey(pid,y,m){return `kb_${pid}_${y}_${String(m).padStart(2,'0')}`}
 function saveData(){
-  if(!state.personId)return;
+  if(guestMode||!state.personId)return;
   localStorage.setItem(dKey(state.personId,state.year,state.month),
     JSON.stringify({income:state.income,expense:state.expense,mode:state.mode}));
   if(currentUser)fsyncData(state.personId,state.year,state.month);
@@ -379,7 +473,7 @@ function loadData(pid,y,m){
 // ════════════════════════════════════════
 function recurKey(pid){return`kb_recur_${pid}`}
 function saveRecurring(){
-  if(!state.personId)return;
+  if(guestMode||!state.personId)return;
   localStorage.setItem(recurKey(state.personId),JSON.stringify({income:state.ri,expense:state.re}));
   if(currentUser)fsyncRecurring(state.personId);
 }
@@ -793,7 +887,7 @@ function addLbl(g,x,y,anchor,text,sz,weight,color){
 }
 function buildSimpleGraph(iI,eI,bal){
   const nodes=[],links=[];
-  iI.forEach(it=>nodes.push({name:it.name,type:'income',amount:it.amount,color:'#3DCAB1'}));
+  iI.forEach(it=>nodes.push({name:it.name,type:'income',amount:it.amount,color:'#0d9488'}));
   const ci=nodes.length;
   nodes.push({name:'収入総額',type:'center',amount:iI.reduce((s,x)=>s+x.amount,0),color:'#374151'});
   iI.forEach((_,i)=>links.push({source:i,target:ci,value:iI[i].amount}));
@@ -864,7 +958,7 @@ function drawSankey(ti,te,bal){
 }
 function buildSkLegend(nodes){
   const seen=new Set(),items=[];
-  if(state.mode==='simple'){items.push({color:'#3DCAB1',label:'収入'},{color:'#374151',label:'収入総額'},{color:'#EF4444',label:'支出'},{color:'#9CA3AF',label:'残高（収支）'});}
+  if(state.mode==='simple'){items.push({color:'#0d9488',label:'収入'},{color:'#374151',label:'収入総額'},{color:'#EF4444',label:'支出'},{color:'#9CA3AF',label:'残高（収支）'});}
   else nodes.forEach(n=>{if(!seen.has(n.name)&&(n.type==='income-cat'||n.type==='expense-cat'||n.type==='balance'||n.type==='center')){seen.add(n.name);items.push({color:n.color||'#888',label:n.name});}});
   document.getElementById('sk-legend').innerHTML=items.map(it=>`<div class="leg"><div class="leg-dot" style="background:${it.color}"></div>${it.label}</div>`).join('');
 }
@@ -876,6 +970,7 @@ const ttEl=document.getElementById('tt');
 function showTT(ev,html){ttEl.innerHTML=html;ttEl.style.opacity='1';moveTT(ev);}
 function moveTT(ev){ttEl.style.left=(ev.clientX+14)+'px';ttEl.style.top=(ev.clientY-14)+'px';}
 function hideTT(){ttEl.style.opacity='0';}
+
 
 // ════════════════════════════════════════
 //  FIREBASE
@@ -919,6 +1014,32 @@ async function syncFromFirestore(){
   }
 }
 
+function showWelcome(){document.getElementById('welcome-ov').classList.remove('hidden');}
+function hideWelcome(){document.getElementById('welcome-ov').classList.add('hidden');}
+async function doGoogleSignInFromWelcome(){
+  const btn=document.getElementById('welcome-google-btn');
+  const errEl=document.getElementById('welcome-err');
+  const origHTML=btn.innerHTML;
+  btn.disabled=true;btn.innerHTML='処理中…';errEl.textContent='';
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+    // onAuthStateChanged が hideWelcome と画面初期化を担当
+  }catch(e){
+    const msgs={'auth/popup-closed-by-user':'キャンセルされました','auth/popup-blocked':'ポップアップを許可してください','auth/cancelled-popup-request':'キャンセルされました'};
+    errEl.textContent=msgs[e.code]||'エラーが発生しました';
+    btn.innerHTML=origHTML;btn.disabled=false;
+  }
+}
+function startGuest(){
+  guestMode=true;
+  hideWelcome();
+  document.getElementById('guest-banner').style.display='flex';
+  const id='guest';
+  persons=[{id,name:'ゲスト'}];
+  state.personId=id;state.income=[];state.expense=[];state.ri=[];state.re=[];
+  renderAll();
+}
 function openAuthModal(){
   document.getElementById('auth-err').textContent='';
   const btn=document.getElementById('auth-submit');
@@ -957,10 +1078,18 @@ auth.onAuthStateChanged(async user=>{
   currentUser=user;
   updateAuthUI();
   if(user){
+    guestMode=false;
+    hideWelcome();
+    document.getElementById('guest-banner').style.display='none';
     await syncFromFirestore();
     loadPersons();
-    if(persons.length){state.personId=persons[0].id;loadData(state.personId,state.year,state.month);}
+    if(!persons.length){
+      const id='p'+Date.now();persons.push({id,name:'ユーザー1'});savePersons();
+      state.personId=id;state.income=[];state.expense=[];saveData();
+    }else{state.personId=persons[0].id;loadData(state.personId,state.year,state.month);}
     renderAll();
+  }else if(!guestMode){
+    showWelcome();
   }
 });
 
@@ -988,12 +1117,12 @@ window.addEventListener('resize',()=>{
 //  INIT
 // ════════════════════════════════════════
 (function init(){
-  loadPersons();
-  if(!persons.length){
-    const id='p'+Date.now();persons.push({id,name:'ユーザー1'});savePersons();
-    state.personId=id;state.income=[];state.expense=[];saveData();
-  }else{state.personId=persons[0].id;loadData(state.personId,state.year,state.month);}
-  renderAll();
+  const DATA_VERSION='v2';
+  if(localStorage.getItem('kb_version')!==DATA_VERSION){
+    Object.keys(localStorage).filter(k=>k.startsWith('kb_')).forEach(k=>localStorage.removeItem(k));
+    localStorage.setItem('kb_version',DATA_VERSION);
+  }
+  // データ初期化はauth.onAuthStateChangedまたはstartGuestが担当
 })();
 </script>
 </body>
