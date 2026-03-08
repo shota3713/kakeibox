@@ -35,6 +35,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
   width:28px;height:28px;cursor:pointer;font-size:16px;display:flex;align-items:center;
   justify-content:center;transition:background .15s;flex-shrink:0}
 .nb:hover{background:rgba(255,255,255,.24)}
+.nb-today{width:auto;padding:0 9px;font-size:11px;font-weight:700;letter-spacing:.03em}
 .nsel{background:rgba(255,255,255,.13);border:none;border-radius:6px;color:var(--navfg);
   padding:4px 8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
   outline:none;-webkit-appearance:none;appearance:none}
@@ -180,6 +181,9 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   /* Sankey */
   .sk-card{padding:14px 12px}
   .sk-top{flex-direction:column;align-items:flex-start;gap:6px}
+  #sk-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* Nav: ログイン済みの名前表示を隠す */
+  #auth-area span{display:none}
   /* Wrap */
   .wrap{padding:14px 10px 80px}
   /* Annual chart */
@@ -253,6 +257,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <select class="nsel" id="sel-y"></select>
     <select class="nsel" id="sel-m"></select>
     <button class="nb" id="btn-next">&#8250;</button>
+    <button class="nb nb-today" id="btn-today">今月</button>
   </div>
   <div class="nav-right">
     <select class="psel" id="sel-p"></select>
@@ -536,6 +541,13 @@ function buildMSel(){
 function setPeriod(y,m){saveData();state.year=y;state.month=m;loadData(state.personId,y,m);buildYSel();buildMSel();renderAll();}
 function prevMonth(){let y=state.year,m=state.month-1;if(m<1){m=12;y--;}setPeriod(y,m);}
 function nextMonth(){let y=state.year,m=state.month+1;if(m>12){m=1;y++;}setPeriod(y,m);}
+function goToday(){const n=new Date();setPeriod(n.getFullYear(),n.getMonth()+1);}
+function updateTodayBtn(){
+  const n=new Date();
+  const isToday=state.year===n.getFullYear()&&state.month===n.getMonth()+1;
+  const btn=document.getElementById('btn-today');
+  if(btn)btn.style.display=isToday?'none':'flex';
+}
 
 // ════════════════════════════════════════
 //  VIEW TOGGLE
@@ -550,6 +562,7 @@ function setView(v){
   document.getElementById('sel-m').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-prev').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-next').classList.toggle('hide-monthly', v==='annual');
+  document.getElementById('btn-today').classList.toggle('hide-monthly', v==='annual');
   if(v==='annual'){saveData();drawAnnualView();}
 }
 
@@ -622,7 +635,7 @@ function recalc(){
 }
 function renderAll(){
   renderTable('income');renderTable('expense');
-  buildYSel();buildMSel();updatePSel();
+  buildYSel();buildMSel();updatePSel();updateTodayBtn();
   document.getElementById('btn-simple').classList.toggle('on',state.mode==='simple');
   document.getElementById('btn-cat').classList.toggle('on',state.mode==='category');
   if(state.view==='annual')drawAnnualView();
@@ -920,7 +933,8 @@ function drawSankey(ti,te,bal){
   const iI=state.income.filter(x=>x.amount>0),eI=state.expense.filter(x=>x.amount>0);
   if(!iI.length||ti===0){buildSkLegend([]);return;}
   const{nodes:gn,links:gl}=state.mode==='category'?buildCatGraph(iI,eI,bal):buildSimpleGraph(iI,eI,bal);
-  const W=Math.max(wrap.clientWidth||800,600),ML=195,MR=195,MT=55,MB=24;
+  const isMobile=window.innerWidth<640;
+  const W=Math.max(wrap.clientWidth||800,isMobile?420:600),ML=isMobile?120:195,MR=isMobile?120:195,MT=55,MB=24;
   const rowR=Math.max(eI.length+(bal>0?1:0),1);
   const H=Math.max(480,Math.max(iI.length,rowR)*56+MT+MB+40);
   const svg=d3.select('#sk-wrap').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).attr('height',H).style('display','block');
@@ -1098,6 +1112,7 @@ auth.onAuthStateChanged(async user=>{
 // ════════════════════════════════════════
 document.getElementById('btn-prev').onclick=prevMonth;
 document.getElementById('btn-next').onclick=nextMonth;
+document.getElementById('btn-today').onclick=goToday;
 document.getElementById('btn-np').onclick=addNewPerson;
 document.getElementById('sel-y').addEventListener('change',e=>setPeriod(+e.target.value,state.month));
 document.getElementById('sel-m').addEventListener('change',e=>setPeriod(state.year,+e.target.value));
