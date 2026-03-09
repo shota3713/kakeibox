@@ -1079,6 +1079,10 @@ firebase.initializeApp({
 });
 const auth=firebase.auth();
 const db=firebase.firestore();
+auth.getRedirectResult().catch(e=>{
+  const errEl=document.getElementById('welcome-err');
+  if(errEl&&e.code!=='auth/cancelled-popup-request')errEl.textContent='ログインエラー: '+e.message;
+});
 
 function uidPath(...segs){return['users',currentUser.uid,...segs].join('/');}
 function fsEntryId(pid,y,m){return`${pid}_${y}_${String(m).padStart(2,'0')}`;}
@@ -1122,17 +1126,9 @@ function hideWelcome(){document.getElementById('welcome-ov').classList.add('hidd
 async function doGoogleSignInFromWelcome(){
   const btn=document.getElementById('welcome-google-btn');
   const errEl=document.getElementById('welcome-err');
-  const origHTML=btn.innerHTML;
   btn.disabled=true;btn.innerHTML='処理中…';errEl.textContent='';
-  try{
-    const provider=new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(provider);
-    // onAuthStateChanged が hideWelcome と画面初期化を担当
-  }catch(e){
-    const msgs={'auth/popup-closed-by-user':'キャンセルされました','auth/popup-blocked':'ポップアップを許可してください','auth/cancelled-popup-request':'キャンセルされました'};
-    errEl.textContent=msgs[e.code]||'エラーが発生しました';
-    btn.innerHTML=origHTML;btn.disabled=false;
-  }
+  const provider=new firebase.auth.GoogleAuthProvider();
+  await auth.signInWithRedirect(provider);
 }
 function loadSampleData(){
   const pid='guest', y=2026;
@@ -1182,18 +1178,10 @@ function openAuthModal(){
 }
 function closeAuthModal(){document.getElementById('auth-ov').classList.remove('open');document.body.style.overflow='';}
 async function doGoogleSignIn(){
-  const errEl=document.getElementById('auth-err');
   const btn=document.getElementById('auth-submit');
   btn.textContent='処理中…';btn.disabled=true;
-  try{
-    const provider=new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(provider);
-    closeAuthModal();
-  }catch(e){
-    const msgs={'auth/popup-closed-by-user':'キャンセルされました','auth/popup-blocked':'ポップアップを許可してください','auth/cancelled-popup-request':'キャンセルされました'};
-    errEl.textContent=msgs[e.code]||'エラー: '+e.message;
-    btn.textContent='Googleでログイン';btn.disabled=false;
-  }
+  const provider=new firebase.auth.GoogleAuthProvider();
+  await auth.signInWithRedirect(provider);
 }
 async function doSignOut(){await auth.signOut();}
 function updateAuthUI(){
