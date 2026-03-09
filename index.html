@@ -300,12 +300,14 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <select class="psel" id="sel-p"></select>
     <button class="btn-np" id="btn-np">＋ 人物</button>
     <button class="nb" id="btn-cat-settings" onclick="openCatSettings()" title="カテゴリ設定">⚙</button>
+    <a href="./landing.html" class="nb auth-btn" title="kakeiboxについて" style="text-decoration:none">?</a>
     <div id="auth-area"></div>
   </div>
 </header>
 <!-- ── GUEST BANNER ── -->
 <div id="guest-banner">
   ゲストモード — データは保存されません
+  <a href="./landing.html" style="color:#92400e;font-weight:700;text-decoration:underline;white-space:nowrap">使い方を見る</a>
   <button onclick="openAuthModal()">ログインして保存する</button>
 </div>
 
@@ -1132,6 +1134,34 @@ async function doGoogleSignInFromWelcome(){
     btn.innerHTML=origHTML;btn.disabled=false;
   }
 }
+function loadSampleData(){
+  const pid='guest', y=2026;
+  const base={
+    income:[{name:'給与',amount:220000}],
+    expense:[
+      {name:'家賃',amount:75000},
+      {name:'食費',amount:35000},
+      {name:'交通費',amount:10000},
+      {name:'光熱費',amount:8000},
+      {name:'通信費',amount:5000},
+      {name:'日用品',amount:8000},
+      {name:'娯楽費',amount:20000},
+      {name:'服飾・美容',amount:10000}
+    ]
+  };
+  const events={
+    4:{expense:[{name:'引越し初期費用',amount:200000}]},
+    6:{income:[{name:'ボーナス',amount:250000}]},
+    8:{expense:[{name:'旅行',amount:30000}]},
+    12:{income:[{name:'ボーナス',amount:250000}],expense:[{name:'忘年会',amount:20000}]}
+  };
+  for(let m=1;m<=12;m++){
+    const ev=events[m]||{};
+    const income=[...base.income,...(ev.income||[])];
+    const expense=[...base.expense,...(ev.expense||[])];
+    localStorage.setItem(dKey(pid,y,m),JSON.stringify({income,expense,mode:'category'}));
+  }
+}
 function startGuest(){
   guestMode=true;
   hideWelcome();
@@ -1139,6 +1169,8 @@ function startGuest(){
   const id='guest';
   persons=[{id,name:'ゲスト'}];
   state.personId=id;state.income=[];state.expense=[];state.ri=[];state.re=[];
+  state.year=2026;state.month=3;
+  loadSampleData();
   renderAll();
 }
 function openAuthModal(){

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>kakeibox — 収支を、見える化する。</title>
+<title>kakeibox — お金の流れが、一目でわかる。</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -97,6 +97,26 @@ footer{background:var(--text);padding:32px clamp(16px,4vw,48px);text-align:cente
 .footer-copy a{color:#64748b}
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
 .reveal.visible{opacity:1;transform:none}
+/* Demo section */
+.demo-section{padding:80px clamp(16px,4vw,48px);background:var(--bg3)}
+.demo-inner{max-width:860px;margin:0 auto}
+.demo-box{background:#0f172a;border-radius:20px;padding:32px;box-shadow:0 24px 80px rgba(0,0,0,.18);overflow:hidden}
+.demo-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.demo-title{font-family:var(--font-brand);font-size:13px;font-weight:700;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase}
+.demo-stats{display:flex;gap:24px;flex-wrap:wrap}
+.demo-stat{text-align:right}
+.demo-stat-label{font-size:10px;color:#64748b;font-family:var(--font-brand);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.demo-stat-value{font-size:18px;font-weight:800;font-family:var(--font-brand);margin-top:2px}
+.demo-stat-value.inc{color:#14b8a6}
+.demo-stat-value.exp{color:#f87171}
+.demo-stat-value.bal{color:#a78bfa}
+.demo-chart{width:100%;overflow:hidden}
+.demo-chart svg{width:100%;height:auto;display:block}
+@media(max-width:640px){
+  .demo-box{padding:20px 16px}
+  .demo-stat-value{font-size:14px}
+  .demo-stats{gap:12px}
+}
 @media(max-width:768px){
   .hero{grid-template-columns:1fr;min-height:auto;padding:100px 20px 60px;gap:40px}
   .hero-visual{order:-1}
@@ -123,13 +143,12 @@ footer{background:var(--text);padding:32px clamp(16px,4vw,48px);text-align:cente
 <section class="hero">
   <div class="hero-text reveal">
     <div class="hero-eyebrow">無料で使える・登録不要で試せる</div>
-    <h1 class="hero-h1">収支を、<br><span class="accent">見える化</span>する。</h1>
-    <p class="hero-sub">サンキー図でお金の流れを直感的に把握。<br>Googleアカウントでスマホ・PCどこからでも同期できます。</p>
+    <h1 class="hero-h1">お金の流れが、<br><span class="accent">一目で</span>わかる。</h1>
+    <p class="hero-sub">収入から支出への流れをサンキー図で可視化。<br>Googleアカウントでスマホ・PCどこからでも同期できます。</p>
     <div class="hero-btns">
-      <a href="./index.html" class="btn-primary">今すぐ無料で使う</a>
-      <a href="./index.html" class="btn-ghost">ログインなしで試す</a>
+      <a href="./index.html" class="btn-primary">ログインなしで試す</a>
     </div>
-    <p class="hero-note">無料 · クレジットカード不要</p>
+    <p class="hero-note">無料 · 登録不要 · クレジットカード不要</p>
   </div>
   <div class="hero-visual reveal">
     <div class="mockup">
@@ -177,6 +196,68 @@ footer{background:var(--text);padding:32px clamp(16px,4vw,48px);text-align:cente
             <div style="font-size:16px;font-weight:800;color:#f87171;font-family:Outfit,sans-serif;margin-top:2px">¥267,500</div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="demo-section">
+  <div class="demo-inner">
+    <p class="section-label reveal" style="margin-bottom:10px">Live Demo</p>
+    <h2 class="section-title reveal" style="margin-bottom:8px">サンキー図で<span style="color:var(--teal)">流れ</span>をつかむ</h2>
+    <p class="section-sub reveal" style="margin-bottom:32px">収入がどの支出に、いくら流れているか。スクロールすると動きます。</p>
+    <div class="demo-box reveal" id="demo-box">
+      <div class="demo-header">
+        <div class="demo-title">2026年 3月 · サンプルデータ</div>
+        <div class="demo-stats">
+          <div class="demo-stat">
+            <div class="demo-stat-label">収入</div>
+            <div class="demo-stat-value inc" id="demo-inc-val">¥0</div>
+          </div>
+          <div class="demo-stat">
+            <div class="demo-stat-label">支出</div>
+            <div class="demo-stat-value exp" id="demo-exp-val">¥0</div>
+          </div>
+          <div class="demo-stat">
+            <div class="demo-stat-label">収支</div>
+            <div class="demo-stat-value bal" id="demo-bal-val">¥0</div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-chart">
+        <svg id="demo-svg" viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg">
+          <!-- Income node -->
+          <rect x="0" y="30" width="28" height="200" rx="5" fill="#0d9488" opacity=".9"/>
+          <text x="36" y="125" dominant-baseline="middle" font-family="Outfit,sans-serif" font-size="11" fill="#94a3b8">給与</text>
+          <text x="36" y="140" dominant-baseline="middle" font-family="Outfit,sans-serif" font-size="10" fill="#64748b" id="demo-income-lbl">¥0</text>
+
+          <!-- Expense nodes -->
+          <rect x="320" y="30" width="20" height="56" rx="4" fill="#ef4444" opacity=".85"/>
+          <rect x="320" y="94" width="20" height="44" rx="4" fill="#f97316" opacity=".85"/>
+          <rect x="320" y="146" width="20" height="30" rx="4" fill="#eab308" opacity=".85"/>
+          <rect x="320" y="184" width="20" height="22" rx="4" fill="#3b82f6" opacity=".85"/>
+          <rect x="320" y="214" width="20" height="16" rx="4" fill="#8b5cf6" opacity=".85"/>
+
+          <!-- Labels -->
+          <text x="348" y="58" dominant-baseline="middle" font-family="Outfit,sans-serif" font-size="11" fill="#cbd5e1">家賃 ¥75,000</text>
+          <text x="348" y="116" dominant-baseline="middle" font-family="Outfit,sans-serif" font-size="11" fill="#cbd5e1">食費 ¥35,000</text>
+          <text x="348" y="161" dominant-baseline="middle" font-family="Outfit,sans-serif" font-size="11" fill="#cbd5e1">交通費 ¥10,000</text>
+          <text x="348" y="195" dominant-baseline="middle" font-family="Outfit,sans-serif" font-size="11" fill="#cbd5e1">光熱費 ¥8,000</text>
+          <text x="348" y="222" dominant-baseline="middle" font-family="Outfit,sans-serif" font-size="11" fill="#cbd5e1">その他 ¥43,000</text>
+
+          <!-- Balance node -->
+          <rect x="620" y="100" width="20" height="60" rx="4" fill="#a78bfa" opacity=".85"/>
+          <text x="610" y="118" text-anchor="end" font-family="Outfit,sans-serif" font-size="11" fill="#a78bfa">収支</text>
+          <text x="610" y="133" text-anchor="end" font-family="Outfit,sans-serif" font-size="10" fill="#7c3aed" id="demo-balance-lbl">¥0</text>
+
+          <!-- Sankey paths: income → expenses -->
+          <path id="dp-0" d="M28,58 C174,58 174,58 320,58" fill="none" stroke="#0d9488" stroke-width="56" stroke-opacity=".35"/>
+          <path id="dp-1" d="M28,122 C174,122 174,116 320,116" fill="none" stroke="#0d9488" stroke-width="44" stroke-opacity=".3"/>
+          <path id="dp-2" d="M28,169 C174,169 174,161 320,161" fill="none" stroke="#0d9488" stroke-width="30" stroke-opacity=".28"/>
+          <path id="dp-3" d="M28,191 C174,191 174,195 320,195" fill="none" stroke="#0d9488" stroke-width="22" stroke-opacity=".25"/>
+          <path id="dp-4" d="M28,210 C174,210 174,222 320,222" fill="none" stroke="#0d9488" stroke-width="16" stroke-opacity=".22"/>
+          <!-- Balance path -->
+          <path id="dp-5" d="M28,232 C174,232 174,230 620,130" fill="none" stroke="#a78bfa" stroke-width="60" stroke-opacity=".2"/>
+        </svg>
       </div>
     </div>
   </div>
@@ -259,6 +340,46 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// Demo animation
+const DEMO_INC = 220000, DEMO_EXP = 171000, DEMO_BAL = 49000;
+let demoPlayed = false;
+function fmtYen(n){ return '¥' + Math.round(n).toLocaleString('ja-JP'); }
+function countUp(el, target, duration){
+  const start = performance.now();
+  function frame(now){
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = fmtYen(target * ease);
+    if(t < 1) requestAnimationFrame(frame);
+    else el.textContent = fmtYen(target);
+  }
+  requestAnimationFrame(frame);
+}
+function playDemoAnim(){
+  if(demoPlayed) return;
+  demoPlayed = true;
+  countUp(document.getElementById('demo-inc-val'), DEMO_INC, 1200);
+  countUp(document.getElementById('demo-exp-val'), DEMO_EXP, 1200);
+  countUp(document.getElementById('demo-bal-val'), DEMO_BAL, 1200);
+  countUp(document.getElementById('demo-income-lbl'), DEMO_INC, 1200);
+  countUp(document.getElementById('demo-balance-lbl'), DEMO_BAL, 1200);
+  const paths = document.querySelectorAll('#demo-svg path[id^="dp-"]');
+  paths.forEach((p, i) => {
+    const len = p.getTotalLength();
+    p.style.strokeDasharray = len;
+    p.style.strokeDashoffset = len;
+    setTimeout(() => {
+      p.style.transition = `stroke-dashoffset ${0.8 + i * 0.1}s cubic-bezier(.4,0,.2,1)`;
+      p.style.strokeDashoffset = 0;
+    }, 200 + i * 100);
+  });
+}
+const demoObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting){ playDemoAnim(); demoObs.unobserve(e.target); } });
+}, { threshold: 0.3 });
+const demoEl = document.getElementById('demo-box');
+if(demoEl) demoObs.observe(demoEl);
 </script>
 </body>
 </html>
