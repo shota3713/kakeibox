@@ -264,7 +264,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 <body>
 
 <!-- ── WELCOME SCREEN ── -->
-<div id="welcome-ov" class="hidden">
+<div id="welcome-ov">
   <div id="welcome-box">
     <div class="wlc-logo">
       <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
@@ -1127,9 +1127,10 @@ async function doGoogleSignInFromWelcome(){
   try{
     const provider=new firebase.auth.GoogleAuthProvider();
     await auth.signInWithPopup(provider);
+    // onAuthStateChanged が hideWelcome と画面初期化を担当
   }catch(e){
-    const msgs={'auth/popup-closed-by-user':'キャンセルされました','auth/popup-blocked':'ポップアップをブロックしています。アドレスバーのアイコンから許可してください。','auth/cancelled-popup-request':'キャンセルされました'};
-    errEl.textContent=msgs[e.code]||'エラー: '+e.message;
+    const msgs={'auth/popup-closed-by-user':'キャンセルされました','auth/popup-blocked':'ポップアップを許可してください','auth/cancelled-popup-request':'キャンセルされました'};
+    errEl.textContent=msgs[e.code]||'エラーが発生しました';
     btn.innerHTML=origHTML;btn.disabled=false;
   }
 }
@@ -1189,7 +1190,7 @@ async function doGoogleSignIn(){
     await auth.signInWithPopup(provider);
     closeAuthModal();
   }catch(e){
-    const msgs={'auth/popup-closed-by-user':'キャンセルされました','auth/popup-blocked':'ポップアップをブロックしています。アドレスバーのアイコンから許可してください。','auth/cancelled-popup-request':'キャンセルされました'};
+    const msgs={'auth/popup-closed-by-user':'キャンセルされました','auth/popup-blocked':'ポップアップを許可してください','auth/cancelled-popup-request':'キャンセルされました'};
     errEl.textContent=msgs[e.code]||'エラー: '+e.message;
     btn.textContent='Googleでログイン';btn.disabled=false;
   }
