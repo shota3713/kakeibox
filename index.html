@@ -790,13 +790,15 @@ function displayAmount(item){
 }
 function shareLabel(sh){
   sh=sh||{type:'self'};
+  const selfName=persons[0]?.name||'自分';
+  const partnerName=persons[1]?.name||'相手';
   switch(sh.type){
     case 'half': return '折半';
-    case 'ratio': return `${sh.value||50}:${100-(sh.value||50)}`;
-    case 'partner_fixed': return `相手 ${fmt(sh.value||0)}`;
-    case 'partner_all': return '相手 100%';
+    case 'ratio': return `${selfName} ${sh.value||50}% : ${partnerName} ${100-(sh.value||50)}%`;
+    case 'partner_fixed': return `${partnerName} ${fmt(sh.value||0)}`;
+    case 'partner_all': return `${partnerName} 100%`;
     case 'self':
-    default: return '自分 100%';
+    default: return `${selfName} 100%`;
   }
 }
 function ensureShare(item){
