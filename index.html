@@ -259,9 +259,202 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   .catset-box{width:95vw;max-height:88vh}
   .cat-name-inp{font-size:12px}
 }
+
+/* ════════════════════════════════════════
+   REDESIGNED MONTHLY VIEW (mock-derived)
+   ════════════════════════════════════════ */
+:root{
+  --pin-bg:#fef3c7;--pin-fg:#92400e;
+  --lock-bg:#f3e8ff;--lock-fg:#6b21a8;
+}
+.view-tabs{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:4px;
+  padding:4px;background:#fff;border:1px solid var(--border);
+  border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,.06);
+  max-width:480px;margin:0 auto 14px;
+}
+.view-tabs button{
+  border:none;background:transparent;color:var(--muted);
+  padding:8px 0;border-radius:10px;font-size:12px;font-weight:800;
+  font-family:inherit;cursor:pointer;transition:all .15s;
+}
+.view-tabs button.on{background:var(--nav);color:#fff}
+.kbox-mtabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 14px}
+.kbox-mtabs button{
+  border:none;background:#dfe7f2;color:var(--muted);
+  padding:11px 8px;border-radius:14px;font-size:13px;font-weight:800;
+  font-family:inherit;cursor:pointer;transition:all .15s;
+}
+.kbox-mtabs button.on{background:var(--nav);color:#fff;box-shadow:0 8px 20px rgba(15,23,42,.12)}
+.kbox-panel{display:none}
+.kbox-panel.on{display:block}
+.kbox-card{background:var(--card);border-radius:20px;box-shadow:var(--sh);overflow:hidden;margin-bottom:12px}
+.kbox-card-head{padding:14px 16px 12px}
+.kbox-card-title{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.06em}
+.kbox-card-title.fixed{color:#92400e}
+.kbox-items{padding:4px 0}
+.kbox-empty{padding:18px 16px;text-align:center;color:var(--muted);font-size:12px}
+.kbox-item{background:transparent;border-radius:0}
+.kbox-item + .kbox-item{border-top:1px solid #eef3f9}
+.kbox-item summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;
+  gap:12px;padding:14px 16px;transition:background .15s;
+}
+.kbox-item summary::-webkit-details-marker{display:none}
+.kbox-item summary:hover{background:#f8fbff}
+.kbox-item-static{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;
+  cursor:pointer;transition:background .15s;
+}
+.kbox-item-static:hover{background:#f8fbff}
+.kbox-item-name{
+  flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.01em;
+}
+.kbox-tag{
+  display:inline-flex;align-items:center;
+  padding:2px 8px;border-radius:999px;
+  font-size:10px;font-weight:800;letter-spacing:.04em;
+  white-space:nowrap;flex-shrink:0;
+}
+.kbox-tag.lock{background:var(--lock-bg);color:var(--lock-fg)}
+.kbox-tag.pin{background:var(--pin-bg);color:var(--pin-fg)}
+.kbox-amount{
+  display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+  min-width:96px;text-align:right;
+}
+.kbox-amount-impact{
+  font-size:22px;font-weight:800;color:var(--text);
+  font-variant-numeric:tabular-nums;letter-spacing:-.04em;line-height:1.1;white-space:nowrap;
+}
+.kbox-chev{
+  color:#cbd5e1;font-size:22px;line-height:1;flex-shrink:0;
+  transition:transform .18s,color .18s;
+}
+.kbox-item[open] .kbox-chev{transform:rotate(90deg);color:var(--muted)}
+.kbox-item-detail{padding:2px 16px 16px;background:#fbfdff;border-top:1px solid #eef3f9}
+.kbox-detail-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding-top:10px;font-size:12px;color:var(--muted);
+}
+.kbox-detail-value{
+  font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;
+  color:var(--text);text-align:right;
+}
+.kbox-detail-input{
+  border:1px solid var(--border);border-radius:8px;
+  padding:5px 9px;font-size:13px;font-family:inherit;
+  font-variant-numeric:tabular-nums;text-align:right;outline:none;
+  width:120px;
+}
+.kbox-detail-input:focus{border-color:var(--income)}
+.kbox-share-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:4px 10px;border-radius:999px;font-size:10px;font-weight:800;
+  cursor:pointer;border:none;font-family:inherit;
+}
+.kbox-share-badge.self{background:#e0e7ff;color:#3730a3}
+.kbox-share-badge.half{background:#dcfce7;color:#166534}
+.kbox-share-badge.ratio{background:#cffafe;color:#0f766e}
+.kbox-share-badge.partner_fixed{background:#fef3c7;color:#92400e}
+.kbox-share-badge.partner_all{background:#fce7f3;color:#9d174d}
+.kbox-del-btn{
+  background:#fee2e2;color:#991b1b;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:5px 11px;border-radius:999px;font-size:11px;font-weight:800;
+  border:none;font-family:inherit;cursor:pointer;
+}
+.kbox-del-btn:hover{background:#fecaca}
+.kbox-pin-toggle{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;
+  cursor:pointer;border:1px solid var(--border);font-family:inherit;
+  background:#fff;color:var(--muted);
+}
+.kbox-pin-toggle.on{background:var(--pin-bg);color:var(--pin-fg);border-color:var(--pin-bg)}
+/* FAB */
+.kbox-fab{
+  position:fixed;right:20px;bottom:24px;z-index:80;
+  width:60px;height:60px;border:none;border-radius:50%;
+  background:var(--nav);color:#fff;
+  font-size:30px;font-weight:300;line-height:1;
+  box-shadow:0 14px 30px rgba(15,23,42,.32),0 4px 10px rgba(15,23,42,.18);
+  cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;
+  display:flex;align-items:center;justify-content:center;
+  font-family:inherit;
+}
+.kbox-fab:hover{box-shadow:0 18px 40px rgba(15,23,42,.4)}
+.kbox-fab:active{transform:scale(.94)}
+/* Bottom sheet */
+.kbox-sheet-bk{
+  position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:90;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.kbox-sheet-bk.open{display:flex}
+.kbox-sheet{
+  width:min(100%,480px);background:#fff;border-radius:24px 24px 0 0;
+  padding:14px 14px 24px;box-shadow:0 -16px 32px rgba(15,23,42,.18);
+  max-height:85vh;overflow-y:auto;
+}
+.kbox-sheet-handle{width:54px;height:5px;border-radius:999px;background:#cbd5e1;margin:0 auto 14px}
+.kbox-sheet h3{margin:0 0 6px;font-size:15px;text-align:center;font-weight:800}
+.kbox-sheet p.sub{margin:0 0 14px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
+.kbox-sheet-tabs{
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;
+  background:#eef2f7;border-radius:14px;margin-bottom:14px;
+}
+.kbox-sheet-tabs button{
+  border:none;background:transparent;padding:10px 0;border-radius:10px;
+  color:var(--muted);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;
+}
+.kbox-sheet-tabs .on{background:#fff;color:var(--nav);box-shadow:0 4px 10px rgba(15,23,42,.06)}
+.kbox-sheet-presets{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;max-height:140px;overflow-y:auto}
+.kbox-sheet-row{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.kbox-sheet-row input{
+  width:100%;border:1px solid var(--border);border-radius:12px;
+  padding:12px 14px;font-size:15px;font-weight:700;
+  background:#fff;color:var(--text);font-family:inherit;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+}
+.kbox-sheet-row input:focus{outline:2px solid var(--nav);outline-offset:0;border-color:transparent}
+.kbox-sheet-submit{
+  width:100%;border:none;border-radius:14px;padding:14px;
+  background:var(--nav);color:#fff;font-size:14px;font-weight:800;cursor:pointer;
+  font-family:inherit;
+}
+.kbox-sheet-close{
+  width:100%;margin-top:10px;border:none;border-radius:14px;padding:12px;
+  background:#eef2f7;color:var(--muted);font-size:13px;font-weight:800;
+  cursor:pointer;font-family:inherit;
+}
+/* Share rule rows */
+.kbox-rule{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:13px 14px;background:#f8fafc;border-radius:14px;cursor:pointer;
+  border:2px solid transparent;
+}
+.kbox-rule + .kbox-rule{margin-top:8px}
+.kbox-rule.on{border-color:var(--nav);background:#fff;box-shadow:0 4px 12px rgba(15,23,42,.08)}
+.kbox-rule strong{font-size:14px;display:block;font-weight:800}
+.kbox-rule small{font-size:11px;color:var(--muted)}
+.kbox-rule-check{width:22px;height:22px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;flex-shrink:0}
+.kbox-rule.on .kbox-rule-check{background:var(--nav)}
+.kbox-rule-input{
+  display:flex;gap:8px;margin-top:8px;align-items:center;font-size:11px;color:var(--muted);
+  padding:0 14px 12px;
+}
+.kbox-rule-input input{
+  width:120px;border:1px solid var(--border);border-radius:10px;padding:7px 10px;
+  font-size:13px;font-weight:700;font-family:inherit;outline:none;
+  font-variant-numeric:tabular-nums;text-align:right;
+}
+.kbox-rule-input input:focus{border-color:var(--nav)}
+@media(max-width:640px){
+  body.has-fab{padding-bottom:96px}
+}
 </style>
 </head>
-<body>
+<body class="has-fab">
 
 <!-- ── WELCOME SCREEN ── -->
 <div id="welcome-ov">
@@ -319,42 +512,67 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 
 <!-- ══ MONTHLY VIEW ══ -->
 <div id="view-monthly" class="wrap">
+  <!-- 自分/相手/グループ タブ（人物2人以上で表示） -->
+  <div class="view-tabs" id="view-tabs" style="display:none">
+    <button class="on" data-vt="self" onclick="setViewMode('self')">自分</button>
+    <button data-vt="partner" onclick="setViewMode('partner')">相手</button>
+    <button data-vt="group" onclick="setViewMode('group')">グループ</button>
+  </div>
+
+  <!-- Summary -->
   <div class="sum-grid">
-    <div class="sum-card si"><div class="sum-lbl">収入総額</div><div class="sum-val" id="v-income">¥0</div></div>
-    <div class="sum-card se"><div class="sum-lbl">支出総額</div><div class="sum-val" id="v-expense">¥0</div></div>
+    <div class="sum-card si"><div class="sum-lbl">収入</div><div class="sum-val" id="v-income">¥0</div></div>
+    <div class="sum-card se"><div class="sum-lbl">支出</div><div class="sum-val" id="v-expense">¥0</div></div>
     <div class="sum-card sb"><div class="sum-lbl">収支</div><div class="sum-val" id="v-balance">¥0</div></div>
   </div>
-  <div class="action-bar">
-    <button class="btn-action" onclick="copyPrevMonth()">📋 前月からコピー</button>
+
+  <!-- 支出/収入/グラフ タブ -->
+  <div class="kbox-mtabs">
+    <button class="on" data-mtab="expense" onclick="setMtab('expense')">支出</button>
+    <button data-mtab="income" onclick="setMtab('income')">収入</button>
+    <button data-mtab="graph" onclick="setMtab('graph')">グラフ</button>
   </div>
-  <div class="tbl-grid">
-    <div class="card">
-      <div class="card-head">収入内訳</div>
-      <table class="bt"><thead><tr><th>名目</th><th class="td-a">収入額</th><th class="td-x"></th><th class="td-x" title="繰り返し登録"></th></tr></thead>
-        <tbody id="tb-i"></tbody>
-        <tfoot><tr class="tr-tot"><td>合計</td><td class="td-a" id="ft-i">¥0</td><td></td></tr></tfoot>
-      </table>
-      <button class="btn-add" onclick="openModal('income')">＋ 収入を追加</button>
+
+  <!-- 支出パネル -->
+  <div class="kbox-panel on" data-panel="expense">
+    <div class="kbox-card">
+      <div class="kbox-card-head"><div class="kbox-card-title fixed">📌 固定支出</div></div>
+      <div class="kbox-items" id="kbox-fixed-expense"></div>
     </div>
-    <div class="card">
-      <div class="card-head">支出内訳</div>
-      <table class="bt"><thead><tr><th>名目</th><th class="td-a">支出額</th><th class="td-x"></th><th class="td-x" title="繰り返し登録"></th></tr></thead>
-        <tbody id="tb-e"></tbody>
-        <tfoot><tr class="tr-tot"><td>合計</td><td class="td-a" id="ft-e">¥0</td><td></td></tr></tfoot>
-      </table>
-      <button class="btn-add" onclick="openModal('expense')">＋ 支出を追加</button>
+    <div class="kbox-card">
+      <div class="kbox-card-head"><div class="kbox-card-title">変動支出</div></div>
+      <div class="kbox-items" id="kbox-variable-expense"></div>
     </div>
   </div>
-  <div class="sk-card">
-    <div class="sk-top">
-      <h2 id="sk-title">収支フロー図</h2>
-      <div class="mode-wrap">
-        <button class="mode-btn on" id="btn-simple" onclick="setMode('simple')">シンプル</button>
-        <button class="mode-btn"    id="btn-cat"    onclick="setMode('category')">カテゴリ別</button>
+
+  <!-- 収入パネル -->
+  <div class="kbox-panel" data-panel="income">
+    <div class="kbox-card">
+      <div class="kbox-card-head"><div class="kbox-card-title fixed">📌 固定収入</div></div>
+      <div class="kbox-items" id="kbox-fixed-income"></div>
+    </div>
+    <div class="kbox-card">
+      <div class="kbox-card-head"><div class="kbox-card-title">変動収入</div></div>
+      <div class="kbox-items" id="kbox-variable-income"></div>
+    </div>
+  </div>
+
+  <!-- グラフパネル -->
+  <div class="kbox-panel" data-panel="graph">
+    <div class="action-bar">
+      <button class="btn-action" onclick="copyPrevMonth()">📋 前月からコピー</button>
+    </div>
+    <div class="sk-card">
+      <div class="sk-top">
+        <h2 id="sk-title">収支フロー図</h2>
+        <div class="mode-wrap">
+          <button class="mode-btn on" id="btn-simple" onclick="setMode('simple')">シンプル</button>
+          <button class="mode-btn"    id="btn-cat"    onclick="setMode('category')">カテゴリ別</button>
+        </div>
       </div>
+      <div class="legend" id="sk-legend"></div>
+      <div id="sk-wrap"></div>
     </div>
-    <div class="legend" id="sk-legend"></div>
-    <div id="sk-wrap"></div>
   </div>
 </div>
 
@@ -462,6 +680,40 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 </div>
 <div id="tt"></div>
 
+<!-- ══ FAB（項目追加） ══ -->
+<button class="kbox-fab" id="kbox-fab" onclick="openInputSheet()" aria-label="項目を追加">＋</button>
+
+<!-- ══ INPUT SHEET ══ -->
+<div class="kbox-sheet-bk" id="input-sheet-bk" onclick="if(event.target===this)closeInputSheet()">
+  <div class="kbox-sheet">
+    <div class="kbox-sheet-handle"></div>
+    <h3 id="input-sheet-title">支出を追加</h3>
+    <p class="sub">よく使う項目から選ぶか、項目名を入力</p>
+    <div class="kbox-sheet-tabs" id="input-sheet-tabs">
+      <button class="on" data-input-tab="expense" onclick="switchInputTab('expense')">支出</button>
+      <button data-input-tab="income" onclick="switchInputTab('income')">収入</button>
+    </div>
+    <div class="kbox-sheet-presets" id="input-sheet-presets"></div>
+    <div class="kbox-sheet-row">
+      <input type="text" id="input-sheet-name" placeholder="項目名を入力（例：食費、家賃）"
+        onkeydown="if(event.key==='Enter')submitInputSheet()">
+    </div>
+    <button class="kbox-sheet-submit" onclick="submitInputSheet()">追加</button>
+    <button class="kbox-sheet-close" onclick="closeInputSheet()">閉じる</button>
+  </div>
+</div>
+
+<!-- ══ SHARE RULE SHEET ══ -->
+<div class="kbox-sheet-bk" id="share-sheet-bk" onclick="if(event.target===this)closeShareSheet()">
+  <div class="kbox-sheet">
+    <div class="kbox-sheet-handle"></div>
+    <h3>分担ルール</h3>
+    <p class="sub" id="share-sheet-sub">この項目の分担方法を選んでください</p>
+    <div id="share-rule-list"></div>
+    <button class="kbox-sheet-close" onclick="closeShareSheet()">閉じる</button>
+  </div>
+</div>
+
 
 <script>
 // ════════════════════════════════════════
@@ -506,6 +758,49 @@ const now = new Date();
 let state = {personId:null, year:now.getFullYear(), month:now.getMonth()+1,
              income:[], expense:[], mode:'simple', view:'monthly', ri:[], re:[]};
 let persons=[], modalType='income', currentUser=null, guestMode=false;
+// View mode: 'self' (default), 'partner', 'group' — only meaningful when 2+ persons
+let viewMode='self';
+// Monthly inner tab: 'expense' | 'income' | 'graph'
+let mtab='expense';
+// Share editing target: {type:'income'|'expense', idx}
+let shareEditTarget=null;
+
+// ════════════════════════════════════════
+//  SHARE / SELF-BURDEN COMPUTATION
+// ════════════════════════════════════════
+function selfBurden(item){
+  const t=item.amount||0;
+  const sh=item.share||{type:'self'};
+  switch(sh.type){
+    case 'half': return t/2;
+    case 'ratio': return t*((sh.value!=null?sh.value:50)/100);
+    case 'partner_fixed': return Math.max(0,t-(sh.value||0));
+    case 'partner_all': return 0;
+    case 'self':
+    default: return t;
+  }
+}
+function partnerBurden(item){return (item.amount||0)-selfBurden(item);}
+function displayAmount(item){
+  if(viewMode==='group') return item.amount||0;
+  if(viewMode==='partner') return partnerBurden(item);
+  return selfBurden(item);
+}
+function shareLabel(sh){
+  sh=sh||{type:'self'};
+  switch(sh.type){
+    case 'half': return '折半';
+    case 'ratio': return `${sh.value||50}:${100-(sh.value||50)}`;
+    case 'partner_fixed': return `相手 ${fmt(sh.value||0)}`;
+    case 'partner_all': return '相手 100%';
+    case 'self':
+    default: return '自分 100%';
+  }
+}
+function ensureShare(item){
+  if(!item.share)item.share={type:'self'};
+  return item;
+}
 
 // ════════════════════════════════════════
 //  STORAGE
@@ -569,8 +864,15 @@ function isRec(type,name){return(type==='income'?state.ri:state.re).some(x=>x.na
 function toggleRec(type,name,amount){
   const arr=type==='income'?state.ri:state.re;
   const i=arr.findIndex(x=>x.name===name);
-  if(i>=0)arr.splice(i,1);else arr.push({name,amount});
-  saveRecurring();renderTable(type);
+  if(i>=0){arr.splice(i,1);}
+  else{
+    // 元の項目からshareもコピーして保持
+    const dataArr=type==='income'?state.income:state.expense;
+    const src=dataArr.find(x=>x.name===name);
+    const share=src?.share?{...src.share}:{type:'self'};
+    arr.push({name,amount,share});
+  }
+  saveRecurring();renderCards(type);
 }
 
 // ════════════════════════════════════════
@@ -663,80 +965,281 @@ function categorize(name,cats){for(const c of cats)if(c.keys.some(k=>name.includ
 function fmtShort(n){return n>=100000000?`${(n/100000000).toFixed(1)}億`:n>=10000?`${(n/10000).toFixed(n>=1000000?0:1)}万`:n.toLocaleString()}
 
 // ════════════════════════════════════════
-//  TABLE RENDER
+//  CARD RENDER
 // ════════════════════════════════════════
-function renderTable(type){
-  const data=type==='income'?state.income:state.expense;
-  const tbody=document.getElementById(type==='income'?'tb-i':'tb-e');
-  tbody.innerHTML='';
-  data.forEach((item,idx)=>{
-    const tr=document.createElement('tr');
-    if(isRec(type,item.name))tr.classList.add('tr-recur');
-    const tdN=document.createElement('td');
-    const inN=document.createElement('input');
-    inN.type='text';inN.value=item.name;inN.placeholder='名目';
-    inN.oninput=e=>{data[idx].name=e.target.value;debounce();};
-    tdN.appendChild(inN);
-    const tdA=document.createElement('td');tdA.className='td-a';
-    const inA=document.createElement('input');
-    inA.type='text';inA.value=item.amount?fmt(item.amount):'';inA.style.textAlign='right';
-    inA.onfocus=()=>{inA.value=item.amount||'';};
-    inA.onblur=()=>{data[idx].amount=parseAmt(inA.value);inA.value=data[idx].amount?fmt(data[idx].amount):'';recalc();};
-    tdA.appendChild(inA);
-    const tdX=document.createElement('td');tdX.className='td-x';
-    const bx=document.createElement('button');bx.className='btn-x';bx.textContent='✕';
-    bx.onclick=()=>{data.splice(idx,1);renderTable(type);recalc();};
-    tdX.appendChild(bx);
-    const tdP=document.createElement('td');tdP.className='td-x';
-    const bp=document.createElement('button');
-    bp.className='btn-pin'+(isRec(type,item.name)?' on':'');
-    bp.textContent='📌';bp.title=isRec(type,item.name)?'繰り返し登録済み（クリックで解除）':'繰り返し項目に登録';
-    bp.onclick=()=>toggleRec(type,item.name,item.amount);
-    tdP.appendChild(bp);
-    tr.append(tdN,tdA,tdX,tdP);tbody.appendChild(tr);
-  });
-}
 let _dt=null;
 function debounce(){clearTimeout(_dt);_dt=setTimeout(recalc,300);}
 
+function isFixedItem(type,item){return isRec(type,item.name);}
+
+function renderCards(type){
+  const data=type==='income'?state.income:state.expense;
+  data.forEach(ensureShare);
+  const fixedEl=document.getElementById(type==='income'?'kbox-fixed-income':'kbox-fixed-expense');
+  const variableEl=document.getElementById(type==='income'?'kbox-variable-income':'kbox-variable-expense');
+  fixedEl.innerHTML='';variableEl.innerHTML='';
+  let fxCount=0,vrCount=0;
+  data.forEach((item,idx)=>{
+    const fixed=isFixedItem(type,item);
+    const target=fixed?fixedEl:variableEl;
+    target.appendChild(buildItemCard(type,item,idx,fixed));
+    if(fixed)fxCount++;else vrCount++;
+  });
+  if(!fxCount){fixedEl.innerHTML=`<div class="kbox-empty">固定項目はありません（項目を追加して📌をオンにすると固定になります）</div>`;}
+  if(!vrCount){variableEl.innerHTML=`<div class="kbox-empty">項目がありません。右下の＋から追加</div>`;}
+}
+
+function buildItemCard(type,item,idx,fixed){
+  const sh=item.share||{type:'self'};
+  const hasShare=sh.type!=='self';
+  const total=item.amount||0;
+  const impact=displayAmount(item);
+  const expandable=hasShare||true; // 編集UIを詳細に格納するので常に展開可
+
+  const det=document.createElement('details');
+  det.className='kbox-item';
+  const sum=document.createElement('summary');
+  sum.appendChild(buildItemNameEl(type,item,idx,fixed));
+  sum.appendChild(buildItemAmountEl(impact));
+  const chev=document.createElement('span');chev.className='kbox-chev';chev.textContent='›';
+  sum.appendChild(chev);
+  det.appendChild(sum);
+
+  const detail=document.createElement('div');detail.className='kbox-item-detail';
+  const partnerExists=persons.length>=2;
+  let html='';
+  if(hasShare){
+    html+=`<div class="kbox-detail-row"><span>総額</span><span class="kbox-detail-value">${fmt(total)}</span></div>`;
+    html+=`<div class="kbox-detail-row"><span>内訳</span><span class="kbox-detail-value">自分 ${fmt(selfBurden(item))} / 相手 ${fmt(partnerBurden(item))}</span></div>`;
+  }
+  html+=`<div class="kbox-detail-row"><span>項目名</span><input class="kbox-detail-input" data-edit="name" data-type="${type}" data-idx="${idx}" value="${esc(item.name||'')}" style="width:160px;text-align:left"></div>`;
+  html+=`<div class="kbox-detail-row"><span>${hasShare?'総額':'金額'}</span><input class="kbox-detail-input" data-edit="amount" data-type="${type}" data-idx="${idx}" value="${total?fmt(total):''}" placeholder="¥0"></div>`;
+  if(partnerExists){
+    html+=`<div class="kbox-detail-row"><span>分担</span><button class="kbox-share-badge ${sh.type}" data-share-open="${type}_${idx}">${shareLabel(sh)}</button></div>`;
+  }
+  html+=`<div class="kbox-detail-row"><span>毎月の固定項目</span><button class="kbox-pin-toggle${fixed?' on':''}" data-pin-toggle="${type}_${idx}">📌 ${fixed?'解除':'固定にする'}</button></div>`;
+  html+=`<div class="kbox-detail-row"><span></span><button class="kbox-del-btn" data-del="${type}_${idx}">この項目を削除</button></div>`;
+  detail.innerHTML=html;
+  det.appendChild(detail);
+
+  // Wire events (using delegation refs)
+  setTimeout(()=>{
+    const nameInp=detail.querySelector('input[data-edit="name"]');
+    if(nameInp){
+      nameInp.oninput=e=>{
+        const arr=state[type==='income'?'income':'expense'];
+        arr[idx].name=e.target.value;
+        // サマリの名前テキストを即時更新
+        const nameEl=det.querySelector('.kbox-name-text');
+        if(nameEl)nameEl.textContent=e.target.value||'(無題)';
+        debounce();
+      };
+      nameInp.onclick=e=>e.stopPropagation();
+    }
+    const amtInp=detail.querySelector('input[data-edit="amount"]');
+    if(amtInp){
+      amtInp.onfocus=()=>{amtInp.value=item.amount||'';};
+      amtInp.onblur=()=>{
+        const arr=state[type==='income'?'income':'expense'];
+        arr[idx].amount=parseAmt(amtInp.value);
+        amtInp.value=arr[idx].amount?fmt(arr[idx].amount):'';
+        renderCards(type);recalc();
+      };
+      amtInp.onclick=e=>e.stopPropagation();
+    }
+    const shareBtn=detail.querySelector('[data-share-open]');
+    if(shareBtn)shareBtn.onclick=e=>{e.preventDefault();e.stopPropagation();openShareSheet(type,idx);};
+    const pinBtn=detail.querySelector('[data-pin-toggle]');
+    if(pinBtn)pinBtn.onclick=e=>{e.preventDefault();e.stopPropagation();toggleRec(type,item.name,item.amount);renderCards(type);};
+    const delBtn=detail.querySelector('[data-del]');
+    if(delBtn)delBtn.onclick=e=>{e.preventDefault();e.stopPropagation();deleteItem(type,idx);};
+  },0);
+
+  return det;
+}
+
+function buildItemNameEl(type,item,idx,fixed){
+  const el=document.createElement('div');el.className='kbox-item-name';
+  const nameText=document.createElement('span');
+  nameText.className='kbox-name-text';
+  nameText.textContent=item.name||'(無題)';
+  el.appendChild(nameText);
+  if(fixed){
+    const tag=document.createElement('span');tag.className='kbox-tag pin';tag.textContent='固定';
+    el.appendChild(tag);
+  }
+  return el;
+}
+function buildItemAmountEl(amount){
+  const el=document.createElement('div');el.className='kbox-amount';
+  const impact=document.createElement('span');impact.className='kbox-amount-impact';
+  impact.textContent=fmt(amount||0);
+  el.appendChild(impact);
+  return el;
+}
+
+// 後方互換: 既存呼び出し向けエイリアス
+function renderTable(type){renderCards(type);}
+
+function deleteItem(type,idx){
+  const arr=state[type==='income'?'income':'expense'];
+  if(!confirm(`「${arr[idx].name||'(無題)'}」を削除しますか？`))return;
+  arr.splice(idx,1);renderCards(type);recalc();
+}
+
 function recalc(){
-  const ti=state.income.reduce((s,x)=>s+x.amount,0);
-  const te=state.expense.reduce((s,x)=>s+x.amount,0);
+  const ti=state.income.reduce((s,x)=>s+displayAmount(x),0);
+  const te=state.expense.reduce((s,x)=>s+displayAmount(x),0);
   const b=ti-te;
   document.getElementById('v-income').textContent=fmt(ti);
   document.getElementById('v-expense').textContent=fmt(te);
   document.getElementById('v-balance').textContent=fmt(b);
-  document.getElementById('ft-i').textContent=fmt(ti);
-  document.getElementById('ft-e').textContent=fmt(te);
   document.getElementById('sk-title').textContent=`${state.year}年${state.month}月 の収支フロー図`;
   drawSankey(ti,te,b);saveData();
 }
+
 function renderAll(){
-  renderTable('income');renderTable('expense');
-  buildYSel();buildMSel();updatePSel();updateTodayBtn();
+  renderCards('income');renderCards('expense');
+  buildYSel();buildMSel();updatePSel();updateTodayBtn();updateViewTabs();
   document.getElementById('btn-simple').classList.toggle('on',state.mode==='simple');
   document.getElementById('btn-cat').classList.toggle('on',state.mode==='category');
   if(state.view==='annual')drawAnnualView();
   else recalc();
 }
 
-// ════════════════════════════════════════
-//  MODAL
-// ════════════════════════════════════════
-function openModal(type){
-  modalType=type;
-  const presets=type==='income'?INCOME_PRESETS:EXPENSE_PRESETS;
-  document.getElementById('m-title').textContent=type==='income'?'収入項目を追加':'支出項目を追加';
-  document.getElementById('m-grid').innerHTML=presets.map(p=>`<button class="chip" onclick="addPreset('${p}')">${p}</button>`).join('');
-  document.getElementById('m-inp').value='';
-  document.getElementById('m-cat-preview').style.display='none';
-  document.getElementById('modal-ov').classList.add('open');
-  document.body.style.overflow='hidden';
-  setTimeout(()=>document.getElementById('m-inp').focus(),200);
+function updateViewTabs(){
+  const el=document.getElementById('view-tabs');
+  if(!el)return;
+  // 2人以上いる時のみタブ表示
+  el.style.display=persons.length>=2?'grid':'none';
+  if(persons.length<2&&viewMode!=='self')viewMode='self';
+  // タブ名を実名で（自分=persons[0], 相手=persons[1]）
+  if(persons.length>=2){
+    const btns=el.querySelectorAll('button');
+    if(btns[0])btns[0].textContent=persons[0]?.name||'自分';
+    if(btns[1])btns[1].textContent=persons[1]?.name||'相手';
+    btns.forEach(b=>b.classList.toggle('on',b.dataset.vt===viewMode));
+  }
 }
-function closeModal(){document.getElementById('modal-ov').classList.remove('open');document.body.style.overflow='';}
-function addPreset(name){const data=modalType==='income'?state.income:state.expense;data.push({name,amount:0});renderTable(modalType);recalc();closeModal();}
-function addCustom(){const v=document.getElementById('m-inp').value.trim();if(!v)return;addPreset(v);}
+
+function setViewMode(m){
+  viewMode=m;
+  document.querySelectorAll('#view-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.vt===m));
+  renderCards('income');renderCards('expense');recalc();
+}
+
+function setMtab(t){
+  mtab=t;
+  document.querySelectorAll('.kbox-mtabs button').forEach(b=>b.classList.toggle('on',b.dataset.mtab===t));
+  document.querySelectorAll('.kbox-panel').forEach(p=>p.classList.toggle('on',p.dataset.panel===t));
+  // グラフタブ切替時にサンキー再描画
+  if(t==='graph'){const ti=state.income.reduce((s,x)=>s+displayAmount(x),0);const te=state.expense.reduce((s,x)=>s+displayAmount(x),0);drawSankey(ti,te,ti-te);}
+}
+
+// ════════════════════════════════════════
+//  INPUT SHEET (項目追加)
+// ════════════════════════════════════════
+function openInputSheet(initType){
+  // 現在のmtabをデフォルトの追加先にする
+  modalType=initType||(mtab==='income'?'income':'expense');
+  switchInputTab(modalType,true);
+  document.getElementById('input-sheet-name').value='';
+  document.getElementById('input-sheet-bk').classList.add('open');
+  setTimeout(()=>document.getElementById('input-sheet-name').focus(),200);
+}
+function closeInputSheet(){document.getElementById('input-sheet-bk').classList.remove('open');}
+function switchInputTab(t,skipFocus){
+  modalType=t;
+  document.querySelectorAll('#input-sheet-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.inputTab===t));
+  document.getElementById('input-sheet-title').textContent=(t==='income'?'収入':'支出')+'を追加';
+  const presets=t==='income'?INCOME_PRESETS:EXPENSE_PRESETS;
+  document.getElementById('input-sheet-presets').innerHTML=presets.map(p=>`<button class="chip" onclick="addPreset('${esc(p)}')">${esc(p)}</button>`).join('');
+  if(!skipFocus)setTimeout(()=>document.getElementById('input-sheet-name').focus(),100);
+}
+function submitInputSheet(){
+  const v=document.getElementById('input-sheet-name').value.trim();
+  if(!v)return;
+  addPreset(v);
+}
+function addPreset(name){
+  const data=modalType==='income'?state.income:state.expense;
+  data.push({name,amount:0,share:{type:'self'}});
+  // 自動で対応するパネルへ切替
+  setMtab(modalType);
+  renderCards(modalType);recalc();closeInputSheet();
+}
+// 後方互換（landing.htmlやJS内呼び出し対策）
+function openModal(type){openInputSheet(type);}
+function closeModal(){closeInputSheet();}
+function addCustom(){submitInputSheet();}
+
+// ════════════════════════════════════════
+//  SHARE RULE SHEET (分担ルール編集)
+// ════════════════════════════════════════
+function openShareSheet(type,idx){
+  shareEditTarget={type,idx};
+  const item=state[type==='income'?'income':'expense'][idx];
+  if(!item)return;
+  ensureShare(item);
+  const cur=item.share.type;
+  document.getElementById('share-sheet-sub').textContent=`「${item.name||'項目'}」 総額 ${fmt(item.amount||0)}`;
+  const partnerName=persons[1]?.name||'相手';
+  const selfName=persons[0]?.name||'自分';
+  const rules=[
+    {type:'self',label:`${selfName} 100%`,desc:'個人支出・個人収入'},
+    {type:'half',label:'折半 (50:50)',desc:'水道・ガス・光熱費など'},
+    {type:'ratio',label:'比率指定',desc:`例: 6:4 や 7:3（${selfName}の%を入力）`,input:true,inputLabel:`${selfName}の負担率(%)`,defaultVal:50},
+    {type:'partner_fixed',label:`${partnerName}が固定額`,desc:`${partnerName}の負担額を入力（残りが${selfName}）`,input:true,inputLabel:`${partnerName}負担額(円)`,defaultVal:0},
+    {type:'partner_all',label:`${partnerName} 100%`,desc:`${partnerName}の支出・${partnerName}の収入`},
+  ];
+  const list=document.getElementById('share-rule-list');
+  list.innerHTML='';
+  rules.forEach(r=>{
+    const wrap=document.createElement('div');
+    const row=document.createElement('div');
+    row.className='kbox-rule'+(cur===r.type?' on':'');
+    row.innerHTML=`<div><strong>${r.label}</strong><small>${r.desc}</small></div><div class="kbox-rule-check">${cur===r.type?'✓':''}</div>`;
+    wrap.appendChild(row);
+    let inputEl=null;
+    if(r.input){
+      const inputBox=document.createElement('div');
+      inputBox.className='kbox-rule-input';
+      const v=cur===r.type?(item.share.value!=null?item.share.value:r.defaultVal):r.defaultVal;
+      inputBox.innerHTML=`<span>${r.inputLabel}</span>`;
+      const inp=document.createElement('input');
+      inp.type='text';inp.value=v;
+      inp.onclick=e=>e.stopPropagation();
+      inputBox.appendChild(inp);
+      wrap.appendChild(inputBox);
+      inputEl=inp;
+      // 入力中もリアルタイム反映できるように
+      inp.onblur=()=>{
+        if(cur===r.type){
+          let val=parseAmt(inp.value);
+          if(r.type==='ratio')val=Math.max(0,Math.min(100,val));
+          item.share.value=val;
+          renderCards(type);recalc();
+        }
+      };
+      // 入力ボックス自体の表示は cur===r.type の時のみ
+      if(cur!==r.type)inputBox.style.opacity='.45';
+    }
+    row.onclick=()=>{
+      let value;
+      if(r.input){
+        let val=parseAmt(inputEl.value);
+        if(r.type==='ratio')val=Math.max(0,Math.min(100,val||r.defaultVal));
+        value=val;
+      }
+      item.share={type:r.type,...(value!==undefined?{value}:{})};
+      renderCards(type);recalc();
+      closeShareSheet();
+    };
+    list.appendChild(wrap);
+  });
+  document.getElementById('share-sheet-bk').classList.add('open');
+}
+function closeShareSheet(){document.getElementById('share-sheet-bk').classList.remove('open');shareEditTarget=null;}
 
 // ════════════════════════════════════════
 //  ANNUAL DATA LOADER
@@ -748,12 +1251,13 @@ function loadAnnualData(){
     const s=localStorage.getItem(dKey(state.personId,state.year,m));
     if(!s)return{m,income:0,expense:0,balance:0,credit:0,cats:{},raw:null};
     const d=JSON.parse(s);
-    const inc=(d.income||[]).reduce((t,x)=>t+x.amount,0);
-    const exp=(d.expense||[]).reduce((t,x)=>t+x.amount,0);
+    // viewMode に応じた金額（自負担/相手負担/総額）で集計
+    const inc=(d.income||[]).reduce((t,x)=>t+displayAmount(x),0);
+    const exp=(d.expense||[]).reduce((t,x)=>t+displayAmount(x),0);
     const creditCat=EXPENSE_CATS.find(c=>c.isCredit)||EXPENSE_CATS[EXPENSE_CATS.length-1];
-    const credit=(d.expense||[]).filter(x=>categorize(x.name,EXPENSE_CATS).name===creditCat.name).reduce((t,x)=>t+x.amount,0);
+    const credit=(d.expense||[]).filter(x=>categorize(x.name,EXPENSE_CATS).name===creditCat.name).reduce((t,x)=>t+displayAmount(x),0);
     const cats={};
-    (d.expense||[]).forEach(x=>{const cn=categorize(x.name,EXPENSE_CATS).name;cats[cn]=(cats[cn]||0)+x.amount;});
+    (d.expense||[]).forEach(x=>{const cn=categorize(x.name,EXPENSE_CATS).name;cats[cn]=(cats[cn]||0)+displayAmount(x);});
     return{m,income:inc,expense:exp,balance:inc-exp,credit,cats,raw:d};
   });
 }
@@ -1010,7 +1514,9 @@ function buildCatGraph(iI,eI,bal){
 // ════════════════════════════════════════
 function drawSankey(ti,te,bal){
   const wrap=document.getElementById('sk-wrap');wrap.innerHTML='';
-  const iI=state.income.filter(x=>x.amount>0),eI=state.expense.filter(x=>x.amount>0);
+  // viewMode に応じた金額に正規化してから描画
+  const iI=state.income.filter(x=>displayAmount(x)>0).map(x=>({name:x.name,amount:displayAmount(x)}));
+  const eI=state.expense.filter(x=>displayAmount(x)>0).map(x=>({name:x.name,amount:displayAmount(x)}));
   if(!iI.length||ti===0){buildSkLegend([]);return;}
   const{nodes:gn,links:gl}=state.mode==='category'?buildCatGraph(iI,eI,bal):buildSimpleGraph(iI,eI,bal);
   const isMobile=window.innerWidth<640;
@@ -1171,6 +1677,7 @@ function startGuest(){
   state.personId=id;state.income=[];state.expense=[];state.ri=[];state.re=[];
   state.year=2026;state.month=3;
   loadSampleData();
+  loadData(id,state.year,state.month);
   renderAll();
 }
 function openAuthModal(){
