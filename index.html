@@ -688,14 +688,16 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   <div class="kbox-sheet">
     <div class="kbox-sheet-handle"></div>
     <h3 id="input-sheet-title">支出を追加</h3>
-    <p class="sub">よく使う項目から選ぶか、項目名を入力</p>
+    <p class="sub">項目名と金額を入力（プリセットからも選べます）</p>
     <div class="kbox-sheet-tabs" id="input-sheet-tabs">
       <button class="on" data-input-tab="expense" onclick="switchInputTab('expense')">支出</button>
       <button data-input-tab="income" onclick="switchInputTab('income')">収入</button>
     </div>
     <div class="kbox-sheet-presets" id="input-sheet-presets"></div>
     <div class="kbox-sheet-row">
-      <input type="text" id="input-sheet-name" placeholder="項目名を入力（例：食費、家賃）"
+      <input type="text" id="input-sheet-name" placeholder="項目名（例：食費、家賃）"
+        onkeydown="if(event.key==='Enter')document.getElementById('input-sheet-amount').focus()">
+      <input type="text" inputmode="numeric" id="input-sheet-amount" placeholder="¥ 金額"
         onkeydown="if(event.key==='Enter')submitInputSheet()">
     </div>
     <button class="kbox-sheet-submit" onclick="submitInputSheet()">追加</button>
@@ -1144,6 +1146,7 @@ function openInputSheet(initType){
   modalType=initType||(mtab==='income'?'income':'expense');
   switchInputTab(modalType,true);
   document.getElementById('input-sheet-name').value='';
+  document.getElementById('input-sheet-amount').value='';
   document.getElementById('input-sheet-bk').classList.add('open');
   setTimeout(()=>document.getElementById('input-sheet-name').focus(),200);
 }
@@ -1153,21 +1156,28 @@ function switchInputTab(t,skipFocus){
   document.querySelectorAll('#input-sheet-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.inputTab===t));
   document.getElementById('input-sheet-title').textContent=(t==='income'?'収入':'支出')+'を追加';
   const presets=t==='income'?INCOME_PRESETS:EXPENSE_PRESETS;
-  document.getElementById('input-sheet-presets').innerHTML=presets.map(p=>`<button class="chip" onclick="addPreset('${esc(p)}')">${esc(p)}</button>`).join('');
+  document.getElementById('input-sheet-presets').innerHTML=presets.map(p=>`<button class="chip" onclick="fillPresetName('${esc(p)}')">${esc(p)}</button>`).join('');
   if(!skipFocus)setTimeout(()=>document.getElementById('input-sheet-name').focus(),100);
 }
-function submitInputSheet(){
-  const v=document.getElementById('input-sheet-name').value.trim();
-  if(!v)return;
-  addPreset(v);
+function fillPresetName(name){
+  // プリセットchipをタップ → 名前欄にセットして金額にフォーカス
+  document.getElementById('input-sheet-name').value=name;
+  document.getElementById('input-sheet-amount').focus();
 }
-function addPreset(name){
+function submitInputSheet(){
+  const name=document.getElementById('input-sheet-name').value.trim();
+  if(!name)return;
+  const amount=parseAmt(document.getElementById('input-sheet-amount').value);
+  addItem(name,amount);
+}
+function addItem(name,amount){
   const data=modalType==='income'?state.income:state.expense;
-  data.push({name,amount:0,share:{type:'self'}});
-  // 自動で対応するパネルへ切替
+  data.push({name,amount:amount||0,share:{type:'self'}});
   setMtab(modalType);
   renderCards(modalType);recalc();closeInputSheet();
 }
+// 後方互換: 旧モーダル経由からの呼び出し（amount=0で追加）
+function addPreset(name){addItem(name,0);}
 // 後方互換（landing.htmlやJS内呼び出し対策）
 function openModal(type){openInputSheet(type);}
 function closeModal(){closeInputSheet();}
