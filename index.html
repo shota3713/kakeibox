@@ -452,6 +452,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 @media(max-width:640px){
   body.has-fab{padding-bottom:96px}
 }
+</style>
 </head>
 <body class="has-fab">
 
@@ -1676,6 +1677,7 @@ function startGuest(){
   state.personId=id;state.income=[];state.expense=[];state.ri=[];state.re=[];
   state.year=2026;state.month=3;
   loadSampleData();
+  loadData(id,state.year,state.month);
   renderAll();
 }
 function openAuthModal(){
