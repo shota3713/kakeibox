@@ -805,6 +805,24 @@ function ensureShare(item){
   if(!item.share)item.share={type:'self'};
   return item;
 }
+function isHiddenForView(item){
+  if(viewMode==='group') return false;
+  const sh=item.share||{type:'self'};
+  const amt=item.amount||0;
+  if(viewMode==='self'){
+    if(sh.type==='partner_all') return true;
+    if(sh.type==='ratio' && (sh.value||0)===0) return true;
+    if(sh.type==='partner_fixed' && amt>0 && (sh.value||0)>=amt) return true;
+    return false;
+  }
+  if(viewMode==='partner'){
+    if(!sh.type||sh.type==='self') return true;
+    if(sh.type==='ratio' && (sh.value||0)===100) return true;
+    if(sh.type==='partner_fixed' && (sh.value||0)===0) return true;
+    return false;
+  }
+  return false;
+}
 
 // ════════════════════════════════════════
 //  STORAGE
@@ -984,6 +1002,7 @@ function renderCards(type){
   fixedEl.innerHTML='';variableEl.innerHTML='';
   let fxCount=0,vrCount=0;
   data.forEach((item,idx)=>{
+    if(isHiddenForView(item)) return;
     const fixed=isFixedItem(type,item);
     const target=fixed?fixedEl:variableEl;
     target.appendChild(buildItemCard(type,item,idx,fixed));
@@ -1579,9 +1598,13 @@ function buildSkLegend(nodes){
 //  TOOLTIP
 // ════════════════════════════════════════
 const ttEl=document.getElementById('tt');
-function showTT(ev,html){ttEl.innerHTML=html;ttEl.style.opacity='1';moveTT(ev);}
+function showTT(ev,html){ttEl.innerHTML=html;ttEl.style.opacity='1';ttEl.dataset.shown='1';moveTT(ev);}
 function moveTT(ev){ttEl.style.left=(ev.clientX+14)+'px';ttEl.style.top=(ev.clientY-14)+'px';}
-function hideTT(){ttEl.style.opacity='0';}
+function hideTT(){ttEl.style.opacity='0';ttEl.dataset.shown='';}
+document.addEventListener('pointerdown',(e)=>{
+  if(ttEl.dataset.shown!=='1')return;
+  if(!e.target.closest('svg path, svg rect, svg circle')) hideTT();
+},true);
 
 
 // ════════════════════════════════════════
