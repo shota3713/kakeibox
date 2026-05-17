@@ -693,7 +693,6 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
       <button class="on" data-input-tab="expense" onclick="switchInputTab('expense')">支出</button>
       <button data-input-tab="income" onclick="switchInputTab('income')">収入</button>
     </div>
-    <div class="kbox-sheet-tabs" id="input-sheet-owner" style="display:none"></div>
     <div class="kbox-sheet-presets" id="input-sheet-presets"></div>
     <div class="kbox-sheet-row">
       <input type="text" id="input-sheet-name" placeholder="項目名（例：食費、家賃）"
@@ -767,8 +766,6 @@ let viewMode='self';
 let mtab='expense';
 // Share editing target: {type:'income'|'expense', idx}
 let shareEditTarget=null;
-// FAB入力シートの「誰の項目か」選択: 'self' | 'partner' | 'half'
-let inputOwner='self';
 
 // ════════════════════════════════════════
 //  SHARE / SELF-BURDEN COMPUTATION
@@ -1171,27 +1168,9 @@ function openInputSheet(initType){
   switchInputTab(modalType,true);
   document.getElementById('input-sheet-name').value='';
   document.getElementById('input-sheet-amount').value='';
-  // 現在のviewModeに応じて所有者をデフォルト選択
-  inputOwner=(viewMode==='partner'?'partner':'self');
-  renderOwnerTabs();
   document.getElementById('input-sheet-bk').classList.add('open');
   setTimeout(()=>document.getElementById('input-sheet-name').focus(),200);
 }
-function renderOwnerTabs(){
-  const el=document.getElementById('input-sheet-owner');
-  if(!el)return;
-  if(persons.length<2){el.style.display='none';el.innerHTML='';return;}
-  const selfName=persons[0]?.name||'自分';
-  const partnerName=persons[1]?.name||'相手';
-  const opts=[
-    {k:'self',label:`${selfName}の項目`},
-    {k:'partner',label:`${partnerName}の項目`},
-    {k:'half',label:'折半'},
-  ];
-  el.style.display='';
-  el.innerHTML=opts.map(o=>`<button class="${inputOwner===o.k?'on':''}" data-owner="${o.k}" onclick="setInputOwner('${o.k}')">${esc(o.label)}</button>`).join('');
-}
-function setInputOwner(k){inputOwner=k;renderOwnerTabs();}
 function closeInputSheet(){document.getElementById('input-sheet-bk').classList.remove('open');}
 function switchInputTab(t,skipFocus){
   modalType=t;
@@ -1214,11 +1193,9 @@ function submitInputSheet(){
 }
 function addItem(name,amount){
   const data=modalType==='income'?state.income:state.expense;
+  // 現在表示中のユーザを100%として作成（全体表示なら自分100%）
   let share={type:'self'};
-  if(persons.length>=2){
-    if(inputOwner==='partner')share={type:'partner_all'};
-    else if(inputOwner==='half')share={type:'half'};
-  }
+  if(persons.length>=2 && viewMode==='partner')share={type:'partner_all'};
   data.push({name,amount:amount||0,share});
   setMtab(modalType);
   renderCards(modalType);recalc();closeInputSheet();
