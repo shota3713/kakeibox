@@ -1193,7 +1193,10 @@ function submitInputSheet(){
 }
 function addItem(name,amount){
   const data=modalType==='income'?state.income:state.expense;
-  data.push({name,amount:amount||0,share:{type:'self'}});
+  // 現在表示中のユーザを100%として作成（全体表示なら自分100%）
+  let share={type:'self'};
+  if(persons.length>=2 && viewMode==='partner')share={type:'partner_all'};
+  data.push({name,amount:amount||0,share});
   setMtab(modalType);
   renderCards(modalType);recalc();closeInputSheet();
 }
