@@ -180,9 +180,12 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   /* Action bar */
   .action-bar{flex-wrap:wrap;gap:6px}
   /* Sankey */
-  .sk-card{padding:14px 12px}
+  .sk-card{padding:14px 8px}
   .sk-top{flex-direction:column;align-items:flex-start;gap:6px}
-  #sk-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #sk-wrap{overflow:hidden;width:100%}
+  #sk-wrap svg{max-width:100%;height:auto}
+  .chart-card{padding:14px 8px}
+  .chart-card svg{max-width:100%;height:auto}
   /* Wrap */
   .wrap{padding:14px 10px 80px}
   /* Annual chart */
@@ -1554,10 +1557,15 @@ function drawSankey(ti,te,bal){
   if(!iI.length||ti===0){buildSkLegend([]);return;}
   const{nodes:gn,links:gl}=state.mode==='category'?buildCatGraph(iI,eI,bal):buildSimpleGraph(iI,eI,bal);
   const isMobile=window.innerWidth<640;
-  const W=Math.max(wrap.clientWidth||800,isMobile?420:600),ML=isMobile?120:195,MR=isMobile?120:195,MT=55,MB=24;
+  const cw=wrap.clientWidth||(isMobile?340:800);
+  const W=isMobile?Math.max(cw,320):Math.max(cw,600);
+  const ML=isMobile?78:195,MR=isMobile?78:195,MT=55,MB=24;
   const rowR=Math.max(eI.length+(bal>0?1:0),1);
-  const H=Math.max(480,Math.max(iI.length,rowR)*56+MT+MB+40);
-  const svg=d3.select('#sk-wrap').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).attr('height',H).style('display','block');
+  const H=Math.max(isMobile?420:480,Math.max(iI.length,rowR)*(isMobile?44:56)+MT+MB+40);
+  const svg=d3.select('#sk-wrap').append('svg')
+    .attr('viewBox',`0 0 ${W} ${H}`)
+    .attr('preserveAspectRatio','xMidYMid meet')
+    .style('display','block').style('width','100%').style('height','auto');
   const sankey=d3.sankey().nodeId(d=>d._sid).nodeWidth(18).nodePadding(12).extent([[ML,MT],[W-MR,H-MB]]);
   const nodesD3=gn.map((d,i)=>({...d,_sid:i}));
   const graph=sankey({nodes:nodesD3,links:gl.map(d=>({...d}))});
@@ -1916,9 +1924,16 @@ document.getElementById('sel-p').addEventListener('change',e=>{
     persons=persons.filter(p=>p.id!==state.personId);savePersons();switchPerson(persons[0].id);
   }else switchPerson(e.target.value);
 });
+let _resizeT=null,_lastW=window.innerWidth;
 window.addEventListener('resize',()=>{
-  if(state.view==='monthly'){const ti=state.income.reduce((s,x)=>s+x.amount,0);const te=state.expense.reduce((s,x)=>s+x.amount,0);drawSankey(ti,te,ti-te);}
-  else drawAnnualView();
+  // モバイルブラウザのスクロールでURLバー表示/非表示時にもresizeが発火するため、幅変化のみで再描画
+  if(window.innerWidth===_lastW)return;
+  _lastW=window.innerWidth;
+  clearTimeout(_resizeT);
+  _resizeT=setTimeout(()=>{
+    if(state.view==='monthly'){const ti=state.income.reduce((s,x)=>s+x.amount,0);const te=state.expense.reduce((s,x)=>s+x.amount,0);drawSankey(ti,te,ti-te);}
+    else drawAnnualView();
+  },180);
 });
 
 // ════════════════════════════════════════
