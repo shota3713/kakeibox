@@ -495,6 +495,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   <div class="nav-right">
     <select class="psel" id="sel-p"></select>
     <button class="btn-np" id="btn-np">＋ 人物</button>
+    <button class="nb" id="btn-group" onclick="openGroupModal()" title="グループ" style="display:none">👥</button>
     <button class="nb" id="btn-cat-settings" onclick="openCatSettings()" title="カテゴリ設定">⚙</button>
     <a href="./landing.html" class="nb auth-btn" title="kakeiboxについて" style="text-decoration:none">?</a>
     <div id="auth-area"></div>
@@ -686,6 +687,17 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 <!-- ══ FAB（項目追加） ══ -->
 <button class="kbox-fab" id="kbox-fab" onclick="openInputSheet()" aria-label="項目を追加">＋</button>
 
+<!-- ══ GROUP MODAL ══ -->
+<div class="kbox-sheet-bk" id="group-sheet-bk" onclick="if(event.target===this)closeGroupModal()">
+  <div class="kbox-sheet">
+    <div class="kbox-sheet-handle"></div>
+    <h3>グループ</h3>
+    <p class="sub" id="group-sub">複数ユーザーで家計簿を共有できます</p>
+    <div id="group-body" style="margin:10px 0 14px"></div>
+    <button class="kbox-sheet-close" onclick="closeGroupModal()">閉じる</button>
+  </div>
+</div>
+
 <!-- ══ INPUT SHEET ══ -->
 <div class="kbox-sheet-bk" id="input-sheet-bk" onclick="if(event.target===this)closeInputSheet()">
   <div class="kbox-sheet">
@@ -762,7 +774,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 const now = new Date();
 let state = {personId:null, year:now.getFullYear(), month:now.getMonth()+1,
              income:[], expense:[], mode:'simple', view:'monthly', ri:[], re:[]};
-let persons=[], modalType='income', currentUser=null, guestMode=false;
+let persons=[], modalType='income', currentUser=null, guestMode=false, groupId=null;
 // View mode: 'self' (default), 'partner', 'group' — only meaningful when 2+ persons
 let viewMode='self';
 // Monthly inner tab: 'expense' | 'income' | 'graph'
@@ -1632,13 +1644,136 @@ firebase.initializeApp({
 const auth=firebase.auth();
 const db=firebase.firestore();
 
-function uidPath(...segs){return['users',currentUser.uid,...segs].join('/');}
+function uidPath(...segs){
+  if(groupId)return['groups',groupId,...segs].join('/');
+  return['users',currentUser.uid,...segs].join('/');
+}
+function profilePath(...segs){return['users',currentUser.uid,...segs].join('/');}
 function fsEntryId(pid,y,m){return`${pid}_${y}_${String(m).padStart(2,'0')}`;}
 async function fsPush(path,data){try{await db.doc(path).set(data,{merge:true});}catch(e){console.warn('fs write',e);}}
 async function fsPull(path){try{const s=await db.doc(path).get();return s.exists?s.data():null;}catch(e){return null;}}
 function fsyncPersons(){if(currentUser)fsPush(uidPath('meta','persons'),{persons});}
 function fsyncData(pid,y,m){const s=localStorage.getItem(dKey(pid,y,m));if(s)fsPush(uidPath('entries',fsEntryId(pid,y,m)),JSON.parse(s));}
 function fsyncRecurring(pid){const s=localStorage.getItem(recurKey(pid));if(s)fsPush(uidPath('recurring',pid),JSON.parse(s));}
+
+// ════════════════════════════════════════
+//  GROUP (multi-user shared data)
+// ════════════════════════════════════════
+const _urlParams=new URLSearchParams(location.search);
+const _pendingJoin=_urlParams.get('join');
+async function loadGroupProfile(){
+  if(!currentUser){groupId=null;return;}
+  const prof=await fsPull(profilePath('meta','profile'));
+  groupId=prof?.groupId||null;
+}
+async function saveGroupProfile(){
+  if(!currentUser)return;
+  await fsPush(profilePath('meta','profile'),{groupId:groupId||null});
+}
+function inviteUrl(){
+  if(!groupId)return'';
+  return`${location.origin}${location.pathname}?join=${encodeURIComponent(groupId)}`;
+}
+async function copyInviteUrl(){
+  const u=inviteUrl();if(!u)return;
+  try{await navigator.clipboard.writeText(u);alert('招待リンクをコピーしました\n'+u);}
+  catch{prompt('招待リンクをコピーしてください:',u);}
+}
+async function createGroup(){
+  if(!currentUser)return;
+  if(groupId){alert('既にグループに参加しています。新規作成は退出してから行ってください。');return;}
+  if(!confirm('現在のあなたのデータを引き継いだグループを作成します。よろしいですか？'))return;
+  const gid='g'+Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+  try{
+    await db.doc(`groups/${gid}`).set({
+      ownerUid:currentUser.uid,
+      members:[currentUser.uid],
+      name:'グループ',
+      createdAt:Date.now(),
+    });
+  }catch(e){alert('作成に失敗しました: '+e.message);return;}
+  groupId=gid;
+  // 既存ローカルデータをグループ配下にコピー
+  try{
+    await fsPush(uidPath('meta','persons'),{persons});
+    const cats=localStorage.getItem('kb_cats');
+    if(cats)await fsPush(uidPath('meta','categories'),JSON.parse(cats));
+    for(const p of persons){
+      const r=localStorage.getItem(recurKey(p.id));
+      if(r)await fsPush(uidPath('recurring',p.id),JSON.parse(r));
+      for(let y=now.getFullYear()-1;y<=now.getFullYear()+1;y++)
+        for(let m=1;m<=12;m++){
+          const s=localStorage.getItem(dKey(p.id,y,m));
+          if(s)await fsPush(uidPath('entries',fsEntryId(p.id,y,m)),JSON.parse(s));
+        }
+    }
+  }catch(e){console.warn('migrate',e);}
+  await saveGroupProfile();
+  renderGroupBody();
+  alert('グループを作成しました。「招待リンクをコピー」で共有してください。');
+}
+async function joinGroup(gid){
+  if(!currentUser||!gid)return;
+  if(gid===groupId){alert('既にこのグループに参加しています');return;}
+  const g=await fsPull(`groups/${gid}`);
+  if(!g){alert('グループが見つかりません。リンクが正しいか確認してください。');return;}
+  const members=Array.isArray(g.members)?g.members:[];
+  if(!members.includes(currentUser.uid)){
+    members.push(currentUser.uid);
+    try{await db.doc(`groups/${gid}`).set({members},{merge:true});}
+    catch(e){alert('参加に失敗しました: '+e.message);return;}
+  }
+  groupId=gid;
+  await saveGroupProfile();
+  // グループ側データを取得して再描画
+  state.income=[];state.expense=[];state.ri=[];state.re=[];persons=[];
+  await syncFromFirestore();
+  loadPersons();
+  if(!persons.length){
+    const id='p'+Date.now();persons.push({id,name:currentUser.displayName||'メンバー'});savePersons();
+    state.personId=id;saveData();
+  }else state.personId=persons[0].id;
+  loadData(state.personId,state.year,state.month);
+  renderAll();
+  alert('グループに参加しました');
+}
+async function leaveGroup(){
+  if(!groupId||!currentUser)return;
+  if(!confirm('グループから退出しますか？(共有データはグループに残ります)'))return;
+  const g=await fsPull(`groups/${groupId}`);
+  if(g){
+    const members=(g.members||[]).filter(u=>u!==currentUser.uid);
+    try{await db.doc(`groups/${groupId}`).set({members},{merge:true});}catch(e){}
+  }
+  groupId=null;
+  await saveGroupProfile();
+  alert('退出しました。ページを再読み込みします。');
+  location.replace(location.pathname);
+}
+function openGroupModal(){renderGroupBody();document.getElementById('group-sheet-bk').classList.add('open');}
+function closeGroupModal(){document.getElementById('group-sheet-bk').classList.remove('open');}
+function renderGroupBody(){
+  const body=document.getElementById('group-body');if(!body)return;
+  const sub=document.getElementById('group-sub');
+  if(!currentUser){body.innerHTML='<p style="font-size:13px;color:var(--muted)">ログインが必要です</p>';return;}
+  if(groupId){
+    sub.textContent='グループ参加中';
+    body.innerHTML=`
+      <div style="background:#f1f5f9;border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">グループID</div>
+        <div style="font-family:monospace;font-size:12px;word-break:break-all">${esc(groupId)}</div>
+      </div>
+      <button class="kbox-sheet-submit" onclick="copyInviteUrl()">📋 招待リンクをコピー</button>
+      <button class="kbox-sheet-close" style="margin-top:8px;color:#991b1b;border-color:#fecaca" onclick="leaveGroup()">グループを退出</button>
+    `;
+  }else{
+    sub.textContent='グループを作成または招待リンクから参加してください';
+    body.innerHTML=`
+      <button class="kbox-sheet-submit" onclick="createGroup()">＋ 新規グループを作成</button>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5">現在のあなたの家計簿データを引き継いだ共有グループを作成します。発行された招待リンクを他のメンバーに送ると、そのユーザもこの家計簿を共同で編集できます。</p>
+    `;
+  }
+}
 
 async function syncFromFirestore(){
   // カテゴリ同期
@@ -1766,14 +1901,22 @@ auth.onAuthStateChanged(async user=>{
     guestMode=false;
     hideWelcome();
     document.getElementById('guest-banner').style.display='none';
-    await syncFromFirestore();
-    loadPersons();
-    if(!persons.length){
-      const id='p'+Date.now();persons.push({id,name:'ユーザー1'});savePersons();
-      state.personId=id;state.income=[];state.expense=[];saveData();
-    }else{state.personId=persons[0].id;loadData(state.personId,state.year,state.month);}
-    renderAll();
+    await loadGroupProfile();
+    if(_pendingJoin && _pendingJoin!==groupId){
+      await joinGroup(_pendingJoin);
+      history.replaceState({},'',location.pathname);
+    }else{
+      await syncFromFirestore();
+      loadPersons();
+      if(!persons.length){
+        const id='p'+Date.now();persons.push({id,name:'ユーザー1'});savePersons();
+        state.personId=id;state.income=[];state.expense=[];saveData();
+      }else{state.personId=persons[0].id;loadData(state.personId,state.year,state.month);}
+      renderAll();
+    }
+    const gb=document.getElementById('btn-group');if(gb)gb.style.display='';
   }else if(!guestMode){
+    const gb=document.getElementById('btn-group');if(gb)gb.style.display='none';
     showWelcome();
   }
 });
