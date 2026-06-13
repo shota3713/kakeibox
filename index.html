@@ -262,6 +262,24 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 .cat-kw-inp{border:1px dashed #94a3b8;border-radius:20px;padding:2px 10px;font-size:11px;
   font-family:inherit;outline:none;min-width:90px;max-width:140px;background:transparent;color:var(--text)}
 .cat-kw-inp:focus{border-color:var(--income)}
+/* 固定費の管理 */
+#fixed-list{overflow-y:auto;flex:1;margin-top:10px;padding-right:2px}
+.fx-row{padding:11px 0;border-bottom:1px solid var(--border)}
+.fx-row-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.fx-name{font-size:14px;font-weight:800;color:var(--text)}
+.fx-del{background:none;border:none;cursor:pointer;color:#fca5a5;font-size:12px;font-weight:700;padding:2px 6px}
+.fx-del:hover{color:var(--expense)}
+.fx-fields{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.fx-f{display:flex;align-items:center;gap:6px}
+.fx-lbl{font-size:11px;font-weight:700;color:var(--muted);min-width:28px}
+.fx-amt{width:104px;padding:5px 9px;border:1px solid var(--border);border-radius:7px;
+  font-size:13px;font-family:inherit;outline:none;text-align:right;font-variant-numeric:tabular-nums}
+.fx-amt:focus{border-color:var(--income)}
+.fx-sel{padding:5px 6px;border:1px solid var(--border);border-radius:7px;font-size:12px;
+  font-family:inherit;outline:none;background:#fff;cursor:pointer}
+.fx-sel:focus{border-color:var(--income)}
+.fx-hint{font-size:10px;color:var(--muted)}
+.fx-empty{padding:24px 12px;text-align:center;color:var(--muted);font-size:12px;line-height:1.7}
 /* カテゴリプレビュー（項目追加モーダル） */
 #m-cat-preview{display:none;align-items:center;gap:6px;margin-top:8px;
   padding:5px 10px;background:#f0fdfa;border-radius:8px;font-size:12px;color:#0f766e}
@@ -504,6 +522,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <select class="psel" id="sel-p"></select>
     <button class="btn-np" id="btn-np">＋ 人物</button>
     <button class="nb" id="btn-group" onclick="openGroupModal()" title="グループ" style="display:none">👥</button>
+    <button class="nb" id="btn-fixed" onclick="openFixedSettings()" title="固定費の管理">📌</button>
     <button class="nb" id="btn-cat-settings" onclick="openCatSettings()" title="カテゴリ設定">⚙</button>
     <a href="./landing.html" class="nb auth-btn" title="kakeiboxについて" style="text-decoration:none">?</a>
     <div id="auth-area"></div>
@@ -689,6 +708,25 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     </div>
   </div>
 </div>
+<!-- ── 固定費の管理モーダル ── -->
+<div class="ov" id="fixed-ov" onclick="if(event.target===this)closeFixedSettings()">
+  <div class="mbox catset-box">
+    <div class="catset-hd">
+      <div class="m-title" style="margin:0">📌 固定費の管理</div>
+      <button class="btn-x" style="font-size:18px;color:#94a3b8;padding:2px 6px" onclick="closeFixedSettings()">✕</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin:0 0 8px;line-height:1.6">毎月コピーされる固定項目の一覧です。開始月より前・終了月より後の月には反映されません。</p>
+    <div class="catset-tabs">
+      <button class="catset-tab"   id="fst-income"  onclick="switchFixedTab('income')">収入の固定費</button>
+      <button class="catset-tab on" id="fst-expense" onclick="switchFixedTab('expense')">支出の固定費</button>
+    </div>
+    <div id="fixed-list"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="m-close" style="margin:0;flex:1;font-size:12px" onclick="closeFixedSettings()">キャンセル</button>
+      <button class="m-ok"    style="flex:2"                          onclick="saveFixedAndClose()">保存して閉じる</button>
+    </div>
+  </div>
+</div>
 <div id="tt"></div>
 
 <!-- ══ FAB（項目追加） ══ -->
@@ -871,10 +909,14 @@ function saveData(){
 }
 function loadData(pid,y,m){
   loadRecurring(pid);
+  // 保存済みの月でも、固定費が有効期間外なら遡及的に非表示にする
+  const dropInactive=(arr,type)=>arr.filter(it=>{const r=recItem(type,it.name);return !r||isRecActive(r,y,m);});
   const s=localStorage.getItem(dKey(pid,y,m));
-  if(s){const d=JSON.parse(s);state.income=d.income||[];state.expense=d.expense||[];state.mode=d.mode||'simple';}
+  if(s){const d=JSON.parse(s);state.income=dropInactive(d.income||[],'income');state.expense=dropInactive(d.expense||[],'expense');state.mode=d.mode||'simple';}
   else{
-    state.income=state.ri.map(x=>({...x}));state.expense=state.re.map(x=>({...x}));
+    // 未入力月は、その月に有効な固定費だけを差し込む
+    state.income=state.ri.filter(x=>isRecActive(x,y,m)).map(x=>({name:x.name,amount:x.amount,share:x.share?{...x.share}:{type:'self'}}));
+    state.expense=state.re.filter(x=>isRecActive(x,y,m)).map(x=>({name:x.name,amount:x.amount,share:x.share?{...x.share}:{type:'self'}}));
     // 前月残高を前月繰越金として自動セット
     const pm=m===1?12:m-1,py=m===1?y-1:y;
     const ps=localStorage.getItem(dKey(pid,py,pm));
@@ -905,6 +947,16 @@ function loadRecurring(pid){
   else{state.ri=[];state.re=[];}
 }
 function isRec(type,name){return(type==='income'?state.ri:state.re).some(x=>x.name===name);}
+function recItem(type,name){return(type==='income'?state.ri:state.re).find(x=>x.name===name);}
+// 年月を比較用の通し番号に
+function ymIndex(y,m){return y*12+(m-1);}
+// 固定費recが (y,m) の月に有効か（開始未設定=過去すべて、終了未設定=継続中）
+function isRecActive(rec,y,m){
+  const t=ymIndex(y,m);
+  if(rec.startY&&rec.startM&&t<ymIndex(rec.startY,rec.startM))return false;
+  if(rec.endY&&rec.endM&&t>ymIndex(rec.endY,rec.endM))return false;
+  return true;
+}
 function toggleRec(type,name,amount){
   const arr=type==='income'?state.ri:state.re;
   const i=arr.findIndex(x=>x.name===name);
@@ -914,7 +966,8 @@ function toggleRec(type,name,amount){
     const dataArr=type==='income'?state.income:state.expense;
     const src=dataArr.find(x=>x.name===name);
     const share=src?.share?{...src.share}:{type:'self'};
-    arr.push({name,amount,share});
+    // ピンした月を開始月にして、それ以前の月には出さない
+    arr.push({name,amount,share,startY:state.year,startM:state.month,endY:null,endM:null});
   }
   saveRecurring();renderCards(type);
 }
@@ -2039,6 +2092,81 @@ function saveCatsAndClose(){
   saveCats();
   closeCatSettings();
   if(state.view==='annual')drawAnnualView();else recalc();
+}
+
+// ════════════════════════════════════════
+//  固定費の管理モーダル
+// ════════════════════════════════════════
+let fixedEditTab='expense', fixedDraft=null;
+function openFixedSettings(){
+  loadRecurring(state.personId);
+  fixedDraft={income:JSON.parse(JSON.stringify(state.ri)),expense:JSON.parse(JSON.stringify(state.re))};
+  switchFixedTab('expense');
+  document.getElementById('fixed-ov').classList.add('open');
+}
+function closeFixedSettings(){
+  document.getElementById('fixed-ov').classList.remove('open');
+  fixedDraft=null;
+}
+function switchFixedTab(tab){
+  fixedEditTab=tab;
+  document.getElementById('fst-income').classList.toggle('on',tab==='income');
+  document.getElementById('fst-expense').classList.toggle('on',tab==='expense');
+  renderFixedList();
+}
+function fxYearSel(idx,key,val){
+  const cy=new Date().getFullYear();
+  let o=`<option value=""${!val?' selected':''}>—</option>`;
+  for(let y=cy-6;y<=cy+2;y++)o+=`<option value="${y}"${val==y?' selected':''}>${y}年</option>`;
+  return `<select class="fx-sel" onchange="fixedSet(${idx},'${key}',this.value)">${o}</select>`;
+}
+function fxMonthSel(idx,key,val){
+  let o=`<option value=""${!val?' selected':''}>—</option>`;
+  for(let m=1;m<=12;m++)o+=`<option value="${m}"${val==m?' selected':''}>${m}月</option>`;
+  return `<select class="fx-sel" onchange="fixedSet(${idx},'${key}',this.value)">${o}</select>`;
+}
+function renderFixedList(){
+  const arr=fixedDraft[fixedEditTab];
+  const el=document.getElementById('fixed-list');
+  if(!arr.length){el.innerHTML=`<div class="fx-empty">${fixedEditTab==='income'?'収入':'支出'}の固定費はまだありません。<br>各項目の「📌 固定にする」で登録できます。</div>`;return;}
+  el.innerHTML=arr.map((it,idx)=>`
+    <div class="fx-row">
+      <div class="fx-row-top">
+        <span class="fx-name">${esc(it.name)}</span>
+        <button class="fx-del" onclick="fixedDelete(${idx})">削除</button>
+      </div>
+      <div class="fx-fields">
+        <div class="fx-f"><span class="fx-lbl">金額</span><input class="fx-amt" type="text" inputmode="numeric" value="${it.amount||0}" onchange="fixedSet(${idx},'amount',this.value)"></div>
+        <div class="fx-f"><span class="fx-lbl">開始</span>${fxYearSel(idx,'startY',it.startY)}${fxMonthSel(idx,'startM',it.startM)}</div>
+        <div class="fx-f"><span class="fx-lbl">終了</span>${fxYearSel(idx,'endY',it.endY)}${fxMonthSel(idx,'endM',it.endM)}<span class="fx-hint">空欄=継続中</span></div>
+      </div>
+    </div>`).join('');
+}
+function fixedSet(idx,key,val){
+  const it=fixedDraft[fixedEditTab][idx];
+  if(key==='amount'){it.amount=parseAmt(val);}
+  else{it[key]=val===''?null:parseInt(val,10);}
+}
+function fixedDelete(idx){
+  const it=fixedDraft[fixedEditTab][idx];
+  if(!confirm(`固定費「${it.name}」を解除しますか？\n（今後この項目は毎月コピーされなくなります）`))return;
+  fixedDraft[fixedEditTab].splice(idx,1);
+  renderFixedList();
+}
+function saveFixedAndClose(){
+  // 年・月の片方だけ指定はクリア
+  for(const type of ['income','expense']){
+    fixedDraft[type].forEach(it=>{
+      if(!it.startY||!it.startM){it.startY=null;it.startM=null;}
+      if(!it.endY||!it.endM){it.endY=null;it.endM=null;}
+    });
+  }
+  state.ri=fixedDraft.income;state.re=fixedDraft.expense;
+  saveRecurring();
+  closeFixedSettings();
+  // 現在の月に有効期間フィルタを反映
+  loadData(state.personId,state.year,state.month);
+  renderAll();
 }
 
 // ── 項目入力時のカテゴリプレビュー ──
