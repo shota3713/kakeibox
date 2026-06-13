@@ -39,8 +39,11 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .auth-btn{width:auto;padding:0 10px;font-size:11px;font-weight:700;white-space:nowrap}
 .nsel{background:rgba(255,255,255,.13);border:none;border-radius:6px;color:var(--navfg);
   padding:4px 8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
-  outline:none;-webkit-appearance:none;appearance:none}
+  outline:none;-webkit-appearance:none;appearance:none;text-align:center;text-align-last:center}
 .nsel option{background:#1e293b;color:#f8fafc}
+/* 固定幅で月変更時の位置ずれを防止 */
+#sel-y{width:66px}
+#sel-m{width:54px}
 .psel{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);
   border-radius:6px;color:var(--navfg);padding:5px 10px;font-size:13px;font-weight:600;
   cursor:pointer;font-family:inherit;outline:none}
@@ -112,6 +115,11 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 .mode-btn{padding:5px 13px;font-size:12px;font-weight:600;border:none;cursor:pointer;
   background:transparent;font-family:inherit;color:var(--muted);transition:all .15s}
 .mode-btn.on{background:var(--income);color:#fff}
+
+/* ── Graph page ── */
+.gp-back{display:inline-flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:13px;font-weight:700;font-family:inherit;padding:4px 0;margin-bottom:14px;transition:color .15s}
+.gp-back:hover{color:var(--income)}
 
 /* ── CHARTS (annual view) ── */
 .chart-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);
@@ -530,11 +538,11 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <div class="sum-card sb"><div class="sum-lbl">収支</div><div class="sum-val" id="v-balance">¥0</div></div>
   </div>
 
-  <!-- 支出/収入/グラフ タブ -->
+  <!-- 支出/収入/グラフ タブ（グラフは専用ページへ遷移） -->
   <div class="kbox-mtabs">
     <button class="on" data-mtab="expense" onclick="setMtab('expense')">支出</button>
     <button data-mtab="income" onclick="setMtab('income')">収入</button>
-    <button data-mtab="graph" onclick="setMtab('graph')">グラフ</button>
+    <button data-mtab="graph" onclick="setView('graph')">📈 グラフ</button>
   </div>
 
   <!-- 支出パネル -->
@@ -561,22 +569,21 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     </div>
   </div>
 
-  <!-- グラフパネル -->
-  <div class="kbox-panel" data-panel="graph">
-    <div class="action-bar">
-      <button class="btn-action" onclick="copyPrevMonth()">📋 前月からコピー</button>
-    </div>
-    <div class="sk-card">
-      <div class="sk-top">
-        <h2 id="sk-title">収支フロー図</h2>
-        <div class="mode-wrap">
-          <button class="mode-btn on" id="btn-simple" onclick="setMode('simple')">シンプル</button>
-          <button class="mode-btn"    id="btn-cat"    onclick="setMode('category')">カテゴリ別</button>
-        </div>
+</div>
+
+<!-- ══ GRAPH VIEW ══ -->
+<div id="view-graph" class="wrap" style="display:none">
+  <button class="gp-back" onclick="setView('monthly')">← 月次に戻る</button>
+  <div class="sk-card">
+    <div class="sk-top">
+      <h2 id="sk-title">収支フロー図</h2>
+      <div class="mode-wrap">
+        <button class="mode-btn on" id="btn-simple" onclick="setMode('simple')">シンプル</button>
+        <button class="mode-btn"    id="btn-cat"    onclick="setMode('category')">カテゴリ別</button>
       </div>
-      <div class="legend" id="sk-legend"></div>
-      <div id="sk-wrap"></div>
     </div>
+    <div class="legend" id="sk-legend"></div>
+    <div id="sk-wrap"></div>
   </div>
 </div>
 
@@ -587,7 +594,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <div class="sum-card si"><div class="sum-lbl">年間収入</div><div class="sum-val" id="ay-i">¥0</div></div>
     <div class="sum-card se"><div class="sum-lbl">年間支出</div><div class="sum-val" id="ay-e">¥0</div></div>
     <div class="sum-card sb"><div class="sum-lbl">年間収支</div><div class="sum-val" id="ay-b">¥0</div></div>
-    <div class="sum-card sc"><div class="sum-lbl">平均貯蓄率</div><div class="sum-val" id="ay-s">–</div></div>
+    <div class="sum-card sc"><div class="sum-lbl">月平均支出</div><div class="sum-val" id="ay-avg">–</div></div>
   </div>
 
   <!-- 月別収支 bar chart -->
@@ -626,7 +633,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   <div class="chart-card">
     <div class="chart-head">月別サマリー</div>
     <div style="overflow-x:auto">
-      <table class="bt" id="month-tbl" style="min-width:600px"></table>
+      <table class="bt" id="month-tbl" style="min-width:360px;width:100%"></table>
     </div>
   </div>
 </div>
@@ -915,18 +922,6 @@ function toggleRec(type,name,amount){
 // ════════════════════════════════════════
 //  COPY PREV MONTH
 // ════════════════════════════════════════
-function copyPrevMonth(){
-  const pm=state.month===1?12:state.month-1,py=state.month===1?state.year-1:state.year;
-  const s=localStorage.getItem(dKey(state.personId,py,pm));
-  if(!s){alert(`${py}年${pm}月のデータがありません`);return;}
-  const has=state.income.some(x=>x.amount>0)||state.expense.some(x=>x.amount>0);
-  if(has&&!confirm('現在の入力内容を前月データで上書きしますか？'))return;
-  const d=JSON.parse(s);
-  state.income=JSON.parse(JSON.stringify(d.income||[]));
-  state.expense=JSON.parse(JSON.stringify(d.expense||[]));
-  renderTable('income');renderTable('expense');recalc();
-}
-
 // ════════════════════════════════════════
 //  PERSONS
 // ════════════════════════════════════════
@@ -963,7 +958,8 @@ function updateTodayBtn(){
   const n=new Date();
   const isToday=state.year===n.getFullYear()&&state.month===n.getMonth()+1;
   const btn=document.getElementById('btn-today');
-  if(btn)btn.style.display=isToday?'none':'flex';
+  // display:none だと幅が消えて中央位置がずれるため visibility で領域を保持
+  if(btn)btn.style.visibility=isToday?'hidden':'visible';
 }
 
 // ════════════════════════════════════════
@@ -972,15 +968,27 @@ function updateTodayBtn(){
 function setView(v){
   state.view=v;
   document.getElementById('view-monthly').style.display=v==='monthly'?'':'none';
+  document.getElementById('view-graph').style.display  =v==='graph'  ?'':'none';
   document.getElementById('view-annual').style.display =v==='annual' ?'':'none';
-  document.getElementById('vt-m').classList.toggle('on',v==='monthly');
+  document.getElementById('vt-m').classList.toggle('on',v==='monthly'||v==='graph');
   document.getElementById('vt-a').classList.toggle('on',v==='annual');
-  // hide month selector in annual mode
+  // hide month selector in annual mode (graph view keeps month context)
   document.getElementById('sel-m').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-prev').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-next').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-today').classList.toggle('hide-monthly', v==='annual');
   if(v==='annual'){saveData();drawAnnualView();}
+  else if(v==='graph'){
+    // グラフは開くたびにシンプル表示から始める
+    state.mode='simple';
+    document.getElementById('btn-simple').classList.add('on');
+    document.getElementById('btn-cat').classList.remove('on');
+    const ti=state.income.reduce((s,x)=>s+displayAmount(x),0);
+    const te=state.expense.reduce((s,x)=>s+displayAmount(x),0);
+    document.getElementById('sk-title').textContent=`${state.year}年${state.month}月 の収支フロー図`;
+    drawSankey(ti,te,ti-te);
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ════════════════════════════════════════
@@ -1133,7 +1141,8 @@ function recalc(){
   document.getElementById('v-expense').textContent=fmt(te);
   document.getElementById('v-balance').textContent=fmt(b);
   document.getElementById('sk-title').textContent=`${state.year}年${state.month}月 の収支フロー図`;
-  drawSankey(ti,te,b);saveData();
+  if(state.view==='graph')drawSankey(ti,te,b);
+  saveData();
 }
 
 function renderAll(){
@@ -1167,11 +1176,10 @@ function setViewMode(m){
 }
 
 function setMtab(t){
+  if(t==='graph'){setView('graph');return;}
   mtab=t;
   document.querySelectorAll('.kbox-mtabs button').forEach(b=>b.classList.toggle('on',b.dataset.mtab===t));
   document.querySelectorAll('.kbox-panel').forEach(p=>p.classList.toggle('on',p.dataset.panel===t));
-  // グラフタブ切替時にサンキー再描画
-  if(t==='graph'){const ti=state.income.reduce((s,x)=>s+displayAmount(x),0);const te=state.expense.reduce((s,x)=>s+displayAmount(x),0);drawSankey(ti,te,ti-te);}
 }
 
 // ════════════════════════════════════════
@@ -1318,12 +1326,12 @@ function drawAnnualView(){
   const months=loadAnnualData();
   const yi=months.reduce((s,d)=>s+d.income,0);
   const ye=months.reduce((s,d)=>s+d.expense,0);
-  const withData=months.filter(d=>d.income>0||d.expense>0);
-  const sr=withData.length?withData.filter(d=>d.income>0).reduce((s,d)=>s+d.balance/d.income*100,0)/(withData.filter(d=>d.income>0).length||1):0;
+  const expMonths=months.filter(d=>d.expense>0);
+  const avgExp=expMonths.length?ye/expMonths.length:0;
   document.getElementById('ay-i').textContent=fmt(yi);
   document.getElementById('ay-e').textContent=fmt(ye);
   document.getElementById('ay-b').textContent=fmt(yi-ye);
-  document.getElementById('ay-s').textContent=Math.round(sr)+'%';
+  document.getElementById('ay-avg').textContent=expMonths.length?fmt(avgExp):'–';
 
   drawMonthBar(document.getElementById('ch-bar'),months);
 
@@ -1489,32 +1497,26 @@ function drawStackedBar(el,months,usedCats){
 // ════════════════════════════════════════
 function drawMonthTable(months){
   const tbl=document.getElementById('month-tbl');
-  const cols=['月','収入','支出','収支','貯蓄率','決済サービス'];
+  const cols=['月','収入','支出','収支'];
   tbl.innerHTML=`<thead><tr>${cols.map(c=>`<th style="text-align:${c==='月'?'center':'right'}">${c}</th>`).join('')}</tr></thead>`;
   const tb=document.createElement('tbody');
   const tfRow=document.createElement('tr');
   let si=0,se=0,sb=0;
   months.forEach(d=>{
     const bal=d.balance;
-    const sr=d.income>0?Math.round(bal/d.income*100):null;
     const has=d.income>0||d.expense>0;
     const tr=document.createElement('tr');
     tr.innerHTML=`<td style="text-align:center;font-weight:700">${d.m}月</td>
       <td style="text-align:right;color:var(--income)">${has?fmt(d.income):'–'}</td>
       <td style="text-align:right;color:var(--expense)">${has?fmt(d.expense):'–'}</td>
-      <td style="text-align:right;color:${bal>=0?'var(--balance)':'var(--expense)'};font-weight:600">${has?fmt(bal):'–'}</td>
-      <td style="text-align:right;color:${sr>=0?'var(--balance)':'var(--expense)'}">${sr!==null?sr+'%':'–'}</td>
-      <td style="text-align:right;color:var(--muted)">${d.credit>0?fmt(d.credit):'–'}</td>`;
+      <td style="text-align:right;color:${bal>=0?'var(--balance)':'var(--expense)'};font-weight:600">${has?fmt(bal):'–'}</td>`;
     tb.appendChild(tr);
     si+=d.income;se+=d.expense;sb+=bal;
   });
-  const avgSr=months.filter(d=>d.income>0).length?Math.round(months.filter(d=>d.income>0).reduce((s,d)=>s+d.balance/d.income*100,0)/months.filter(d=>d.income>0).length):null;
   tfRow.innerHTML=`<td style="text-align:center;font-weight:700">合計</td>
     <td style="text-align:right;color:var(--income);font-weight:700">${fmt(si)}</td>
     <td style="text-align:right;color:var(--expense);font-weight:700">${fmt(se)}</td>
-    <td style="text-align:right;color:${sb>=0?'var(--balance)':'var(--expense)'};font-weight:700">${fmt(sb)}</td>
-    <td style="text-align:right;font-weight:700">${avgSr!==null?avgSr+'%':'–'}</td>
-    <td style="text-align:right;color:var(--muted);font-weight:700">${fmt(months.reduce((s,d)=>s+d.credit,0))}</td>`;
+    <td style="text-align:right;color:${sb>=0?'var(--balance)':'var(--expense)'};font-weight:700">${fmt(sb)}</td>`;
   tfRow.style.cssText='background:#f8fafc;border-top:2px solid var(--text)';
   tb.appendChild(tfRow);
   tbl.appendChild(tb);
@@ -2074,8 +2076,8 @@ window.addEventListener('resize',()=>{
   _lastW=window.innerWidth;
   clearTimeout(_resizeT);
   _resizeT=setTimeout(()=>{
-    if(state.view==='monthly'){const ti=state.income.reduce((s,x)=>s+x.amount,0);const te=state.expense.reduce((s,x)=>s+x.amount,0);drawSankey(ti,te,ti-te);}
-    else drawAnnualView();
+    if(state.view==='graph'){const ti=state.income.reduce((s,x)=>s+displayAmount(x),0);const te=state.expense.reduce((s,x)=>s+displayAmount(x),0);drawSankey(ti,te,ti-te);}
+    else if(state.view==='annual')drawAnnualView();
   },180);
 });
 
