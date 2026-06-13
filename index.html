@@ -12,6 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -262,6 +263,21 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 .cat-kw-inp{border:1px dashed #94a3b8;border-radius:20px;padding:2px 10px;font-size:11px;
   font-family:inherit;outline:none;min-width:90px;max-width:140px;background:transparent;color:var(--text)}
 .cat-kw-inp:focus{border-color:var(--income)}
+/* クレカ明細分析 */
+.cc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.cc-status{font-size:12px;color:var(--muted);font-weight:600;min-height:18px;margin:4px 0}
+.cc-status.err{color:var(--expense)}
+.cc-status.ok{color:var(--income)}
+.cc-cat-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.cc-cat-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.cc-cat-name{font-size:13px;font-weight:700;flex-shrink:0;min-width:96px}
+.cc-cat-bar-wrap{flex:1;height:8px;background:#eef2f7;border-radius:5px;overflow:hidden}
+.cc-cat-bar{height:100%;border-radius:5px}
+.cc-cat-amt{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;min-width:84px;text-align:right}
+.cc-empty{font-size:12px;color:var(--muted);padding:14px 0;line-height:1.7}
+.cc-total{display:flex;justify-content:space-between;align-items:baseline;margin:10px 0 6px}
+.cc-total-lbl{font-size:12px;color:var(--muted);font-weight:700}
+.cc-total-val{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
 /* 固定費の管理 */
 #fixed-list{overflow-y:auto;flex:1;margin-top:10px;padding-right:2px}
 .fx-row{padding:11px 0;border-bottom:1px solid var(--border)}
@@ -654,6 +670,20 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <div style="overflow-x:auto">
       <table class="bt" id="month-tbl" style="min-width:360px;width:100%"></table>
     </div>
+  </div>
+
+  <!-- クレカ明細分析（CSV取込） -->
+  <div class="chart-card">
+    <div class="cc-head">
+      <div>
+        <div class="chart-head" style="margin-bottom:2px">クレカ明細の分析</div>
+        <div class="chart-sub" style="margin:0">明細CSVを取り込むと、AIが形式を問わず自動分類します</div>
+      </div>
+      <button class="btn-action" id="cc-import-btn" onclick="document.getElementById('cc-file').click()">📄 明細CSVを取込</button>
+      <input type="file" id="cc-file" accept=".csv,text/csv,text/plain" style="display:none" onchange="onCreditCsvSelected(this)">
+    </div>
+    <div id="cc-status" class="cc-status"></div>
+    <div id="cc-breakdown"></div>
   </div>
 </div>
 
@@ -1400,6 +1430,98 @@ function drawAnnualView(){
   document.getElementById('ch-stack-leg').innerHTML=usedCats.map(c=>`<div class="leg"><div class="leg-dot" style="background:${c.color}"></div>${c.name}</div>`).join('');
   drawStackedBar(document.getElementById('ch-stack'),months,usedCats);
   drawMonthTable(months);
+  renderCreditBreakdown();
+}
+
+// ════════════════════════════════════════
+//  クレカ明細（CSV取込 → Gemini分類 → 年間レポート表示）
+// ════════════════════════════════════════
+function creditKey(pid,y,m){return`kb_credit_${pid}_${y}_${String(m).padStart(2,'0')}`;}
+function fsyncCredit(pid,y,m){
+  if(!currentUser)return;
+  const s=localStorage.getItem(creditKey(pid,y,m));
+  if(s)fsPush(uidPath('credit',fsEntryId(pid,y,m)),{tx:JSON.parse(s)});
+}
+function loadCreditYear(){
+  // 表示中の人物・年の12か月分の取引を集約
+  const all=[];
+  for(let m=1;m<=12;m++){
+    const s=localStorage.getItem(creditKey(state.personId,state.year,m));
+    if(s){try{JSON.parse(s).forEach(t=>all.push({...t,_m:m}));}catch(e){}}
+  }
+  return all;
+}
+function ccStatus(msg,kind){
+  const el=document.getElementById('cc-status');if(!el)return;
+  el.textContent=msg||'';el.className='cc-status'+(kind?' '+kind:'');
+}
+async function onCreditCsvSelected(input){
+  const file=input.files&&input.files[0];input.value='';
+  if(!file)return;
+  if(guestMode||!currentUser){ccStatus('クレカ明細の取込にはログインが必要です','err');return;}
+  if(!firebase.functions){ccStatus('機能の読み込みに失敗しました（再読み込みしてください）','err');return;}
+  let text='';
+  try{text=await file.text();}catch(e){ccStatus('ファイルの読み取りに失敗しました','err');return;}
+  if(!text.trim()){ccStatus('CSVが空です','err');return;}
+  if(text.length>300000){ccStatus('CSVが大きすぎます（300KB以下にしてください）','err');return;}
+  const btn=document.getElementById('cc-import-btn');
+  if(btn)btn.disabled=true;
+  ccStatus('AIが明細を解析中…（数秒〜十数秒）');
+  try{
+    const fns=firebase.app().functions('asia-northeast1');
+    const call=fns.httpsCallable('classifyCreditCsv');
+    const cats=EXPENSE_CATS.map(c=>c.name);
+    const res=await call({csv:text,categories:cats});
+    const txs=(res.data&&res.data.transactions)||[];
+    if(!txs.length){ccStatus('取引を抽出できませんでした。別のCSVをお試しください。','err');return;}
+    const saved=storeCreditTransactions(txs);
+    ccStatus(`✓ ${txs.length}件を取り込みました（${saved.months.join('・')}月）`,'ok');
+    renderCreditBreakdown();
+  }catch(err){
+    const msg=(err&&err.message)?err.message:'解析に失敗しました';
+    ccStatus('エラー: '+msg,'err');
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
+function storeCreditTransactions(txs){
+  // 取引日の年月ごとに振り分け。表示中の年のみ保存（他年は無視）。同じ月は今回分で置換。
+  const byMonth={};
+  txs.forEach(t=>{
+    const d=String(t.date||'');const mt=d.match(/^(\d{4})-(\d{2})/);
+    let y=mt?+mt[1]:state.year, m=mt?+mt[2]:state.month;
+    if(y!==state.year)return; // 表示中の年に属する明細だけ保存
+    (byMonth[m]=byMonth[m]||[]).push({date:t.date,name:t.name,amount:Number(t.amount)||0,category:t.category||'その他'});
+  });
+  const months=[];
+  Object.keys(byMonth).map(Number).sort((a,b)=>a-b).forEach(m=>{
+    localStorage.setItem(creditKey(state.personId,state.year,m),JSON.stringify(byMonth[m]));
+    fsyncCredit(state.personId,state.year,m);
+    months.push(m);
+  });
+  return {months};
+}
+function renderCreditBreakdown(){
+  const el=document.getElementById('cc-breakdown');if(!el)return;
+  const all=loadCreditYear();
+  if(!all.length){
+    el.innerHTML=`<div class="cc-empty">${state.year}年のクレカ明細はまだありません。<br>上の「明細CSVを取込」から取り込めます。</div>`;
+    return;
+  }
+  const totals={};let sum=0;
+  all.forEach(t=>{const a=Number(t.amount)||0;if(a<=0)return;const c=t.category||'その他';totals[c]=(totals[c]||0)+a;sum+=a;});
+  const colorOf=name=>{const cat=EXPENSE_CATS.find(c=>c.name===name);return cat?cat.color:'#94a3b8';};
+  const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  const max=rows.length?rows[0][1]:1;
+  let html=`<div class="cc-total"><span class="cc-total-lbl">${state.year}年 クレカ利用合計（${all.length}件）</span><span class="cc-total-val">${fmt(sum)}</span></div>`;
+  html+=rows.map(([name,amt])=>`
+    <div class="cc-cat-row">
+      <span class="cc-cat-dot" style="background:${colorOf(name)}"></span>
+      <span class="cc-cat-name">${esc(name)}</span>
+      <span class="cc-cat-bar-wrap"><span class="cc-cat-bar" style="width:${Math.max(3,amt/max*100)}%;background:${colorOf(name)}"></span></span>
+      <span class="cc-cat-amt">${fmt(amt)}</span>
+    </div>`).join('');
+  el.innerHTML=html;
 }
 
 // ════════════════════════════════════════
@@ -1849,6 +1971,9 @@ async function syncFromFirestore(){
         if(p)localStorage.setItem(`kb_${p[1]}_${p[2]}_${p[3]}`,JSON.stringify(doc.data()));});}catch(e){}
     try{const snap=await db.collection(uidPath('recurring')).get();
       snap.forEach(doc=>localStorage.setItem(recurKey(doc.id),JSON.stringify(doc.data())));}catch(e){}
+    try{const snap=await db.collection(uidPath('credit')).get();
+      snap.forEach(doc=>{const p=doc.id.match(/^(.+)_(\d{4})_(\d{2})$/);const d=doc.data();
+        if(p&&Array.isArray(d.tx))localStorage.setItem(`kb_credit_${p[1]}_${p[2]}_${p[3]}`,JSON.stringify(d.tx));});}catch(e){}
   }else{
     fsyncPersons();
     persons.forEach(p=>{
