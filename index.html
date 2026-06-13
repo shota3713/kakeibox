@@ -63,6 +63,97 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 /* ── MAIN ── */
 .wrap{max-width:1120px;margin:0 auto;padding:22px 16px 60px}
 
+/* monthly refresh */
+.nav{padding:10px 16px;min-height:60px;height:auto}
+.nav-center{display:grid;grid-template-columns:32px minmax(132px,auto) 32px auto;align-items:center;gap:8px}
+.nav-period{min-width:132px;text-align:center;color:var(--navfg);font-size:14px;font-weight:800;letter-spacing:-.02em}
+.nav-hidden{position:absolute !important;width:1px !important;height:1px !important;padding:0 !important;margin:-1px !important;overflow:hidden !important;clip:rect(0,0,0,0) !important;white-space:nowrap !important;border:0 !important}
+.monthly-wrap{max-width:640px;padding:14px 10px 110px}
+.m-screen{display:flex;flex-direction:column;gap:14px}
+.person-switch-wrap{position:sticky;top:60px;z-index:8;padding-top:2px}
+.person-switch{display:flex;gap:8px;overflow:auto;padding-bottom:2px}
+.person-pill{border:none;background:rgba(255,255,255,.88);color:var(--muted);padding:9px 18px;border-radius:14px;font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 8px 20px rgba(15,23,42,.06);cursor:pointer}
+.person-pill.on{background:#0f172a;color:#fff}
+.person-pill.add{border:1px dashed #cbd5e1;background:#f8fafc;color:var(--muted)}
+.m-summary{padding:12px 6px;border-radius:22px}
+.m-summary-grid{display:grid;grid-template-columns:repeat(3,1fr)}
+.m-summary-cell{padding:2px 10px;text-align:center;position:relative}
+.m-summary-cell + .m-summary-cell::before{content:"";position:absolute;left:0;top:14%;bottom:14%;width:1px;background:var(--border)}
+.m-summary-label{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.05em}
+.m-summary-value{margin-top:4px;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.04em;line-height:1}
+.m-summary-income .m-summary-value{color:var(--income)}
+.m-summary-expense .m-summary-value{color:var(--expense)}
+.m-summary-balance .m-summary-value{color:#3b82f6}
+.m-summary-balance.neg .m-summary-value{color:var(--expense)}
+.m-summary-sub{margin-top:4px;font-size:10px;color:var(--muted)}
+.m-toolbar{display:flex;justify-content:flex-end}
+.m-copy-btn{border:1px solid var(--border);background:rgba(255,255,255,.92);color:var(--muted);padding:9px 12px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer}
+.m-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.m-tab{border:none;background:#dfe7f2;color:var(--muted);padding:11px 8px;border-radius:15px;font-size:13px;font-weight:800;cursor:pointer}
+.m-tab.on{background:#0f172a;color:#fff;box-shadow:0 12px 24px rgba(15,23,42,.14)}
+.m-panel{display:none}
+.m-panel.on{display:block}
+.m-section{background:var(--card);border-radius:20px;box-shadow:var(--sh);overflow:hidden}
+.m-section + .m-section{margin-top:12px}
+.m-section-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;border-bottom:1px solid #edf2f7}
+.m-section-title{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.05em}
+.m-section-title.fixed{color:#b45309}
+.m-section-total{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.m-section-total.expense{color:var(--expense)}
+.m-section-total.income{color:var(--income)}
+.m-items{padding:12px}
+.m-empty{padding:10px 6px 6px;text-align:center;color:#94a3b8;font-size:12px}
+.m-item{border:1px solid #edf2f7;border-radius:18px;background:#fff;overflow:hidden}
+.m-item + .m-item{margin-top:10px}
+.m-item summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px}
+.m-item summary::-webkit-details-marker{display:none}
+.m-item-main{min-width:0;flex:1}
+.m-item-top,.m-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.m-item-bottom{margin-top:4px}
+.m-item-name{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:800;min-width:0}
+.m-item-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m-hint{display:inline-flex;align-items:center;justify-content:center;cursor:help;line-height:1}
+.m-hint.lock{font-size:11px;color:#8b5cf6}
+.m-hint.pin{font-size:11px;color:#f59e0b}
+.m-impact-line{display:flex;align-items:baseline;gap:8px;min-width:0}
+.m-impact-caption{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.04em;white-space:nowrap}
+.m-impact{font-size:29px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.05em;white-space:nowrap}
+.m-impact.expense,.m-total.expense{color:var(--expense)}
+.m-impact.income,.m-total.income{color:var(--income)}
+.m-toggle{font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.04em;white-space:nowrap}
+.m-item[open] .m-toggle{color:var(--text)}
+.m-total{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.03em;white-space:nowrap}
+.m-item-detail{padding:0 14px 14px;background:#fbfdff;border-top:1px solid #edf2f7}
+.m-item-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;font-size:12px;color:var(--muted)}
+.m-item-row.form{align-items:flex-start}
+.m-item-label{font-weight:700}
+.m-item-value{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.m-item-inline{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:nowrap;font-size:12px;font-weight:800;white-space:nowrap}
+.m-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:800}
+.m-badge.self{background:#e0e7ff;color:#3730a3}
+.m-edit-grid{display:grid;grid-template-columns:1fr 120px;gap:8px;width:100%}
+.m-edit-input{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:#fff;font-size:13px;font-family:inherit;outline:none}
+.m-edit-input:focus{border-color:var(--income)}
+.m-edit-amount{text-align:right;font-variant-numeric:tabular-nums}
+.m-item-actions{display:flex;justify-content:space-between;gap:8px;padding-top:12px}
+.m-action{border:none;border-radius:12px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.m-action.ghost{background:#eef2f7;color:var(--muted)}
+.m-action.primary{background:#fff7ed;color:#b45309}
+.m-action.danger{background:#fef2f2;color:#dc2626}
+.m-add{display:block;width:calc(100% - 24px);margin:0 12px 12px;padding:11px 12px;border:1px dashed #cbd5e1;border-radius:14px;background:#f8fafc;color:var(--muted);font-size:13px;font-weight:700;text-align:center;cursor:pointer}
+.m-graph-card{background:var(--card);border-radius:20px;box-shadow:var(--sh);padding:16px}
+.m-graph-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.m-graph-head h2{font-size:14px;font-weight:800}
+.m-graph-wrap{margin-top:6px;border:1px solid #e6edf5;border-radius:18px;background:linear-gradient(180deg,#fcfdff 0%,#f6f9fd 100%);padding:14px}
+.m-graph-note{margin-top:10px;font-size:11px;color:var(--muted);font-weight:700}
+.qbar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(calc(100% - 16px),464px);z-index:20;display:flex;align-items:center;gap:8px;padding:8px;background:rgba(15,23,42,.96);border-radius:20px;box-shadow:0 24px 40px rgba(15,23,42,.26)}
+.q-switch{display:flex;gap:4px;padding:3px;background:rgba(255,255,255,.08);border-radius:14px}
+.q-switch button{border:none;background:transparent;color:rgba(255,255,255,.58);padding:10px 9px;border-radius:11px;font-size:12px;font-weight:800;cursor:pointer}
+.q-switch button.on{background:#fff;color:#0f172a}
+.q-input{flex:1;min-width:0;border:none;background:rgba(255,255,255,.08);color:#fff;border-radius:14px;padding:12px;font-size:15px;font-weight:700;font-family:inherit}
+.q-input::placeholder{color:rgba(255,255,255,.45)}
+.q-add{width:42px;height:42px;border:none;border-radius:14px;background:#fff;color:#0f172a;font-size:24px;font-weight:800;cursor:pointer}
+
 /* ── SUMMARY ── */
 .sum-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
 .sum-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
@@ -112,6 +203,34 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 .mode-btn{padding:5px 13px;font-size:12px;font-weight:600;border:none;cursor:pointer;
   background:transparent;font-family:inherit;color:var(--muted);transition:all .15s}
 .mode-btn.on{background:var(--income);color:#fff}
+
+/* ── Sankey preview card (tappable, monthly view) ── */
+.sk-preview{position:relative;background:var(--card);border-radius:16px;box-shadow:var(--sh);
+  padding:18px 20px;cursor:pointer;border:1px solid var(--border);overflow:hidden;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.sk-preview:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(15,23,42,.14);border-color:var(--income-light)}
+.sk-preview:active{transform:translateY(0)}
+.sk-preview:focus-visible{outline:2px solid var(--income);outline-offset:2px}
+.sk-preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.sk-preview-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
+.sk-preview-title .ico{font-size:18px}
+.sk-preview-cta{font-size:12px;font-weight:800;color:var(--income);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.sk-preview-cta .arrow{transition:transform .18s ease}
+.sk-preview:hover .sk-preview-cta .arrow{transform:translateX(3px)}
+.sk-preview-sub{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px}
+.sk-mini{position:relative;border-radius:12px;background:linear-gradient(180deg,#fcfdff 0%,#f4f8fc 100%);
+  border:1px solid #e9eff7;padding:6px;height:150px;overflow:hidden}
+.sk-mini svg{display:block;width:100%;height:100%}
+.sk-mini-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:12px;font-weight:600}
+.sk-mini-fade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,0) 55%,rgba(244,248,252,.65) 100%);pointer-events:none;border-radius:12px}
+.sk-mini-badge{position:absolute;right:12px;bottom:10px;background:rgba(15,23,42,.82);color:#fff;
+  font-size:11px;font-weight:800;padding:5px 11px;border-radius:999px;display:flex;align-items:center;gap:6px;
+  box-shadow:0 4px 12px rgba(15,23,42,.25)}
+
+/* ── Graph page ── */
+.gp-back{display:inline-flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:13px;font-weight:700;font-family:inherit;padding:4px 0;margin-bottom:14px;transition:color .15s}
+.gp-back:hover{color:var(--income)}
 
 /* ── CHARTS (annual view) ── */
 .chart-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);
@@ -163,9 +282,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   .nav-brand{font-size:16px;order:1}
   .nav-right{order:2;gap:6px}
   .nav-center{order:3;width:100%;justify-content:center;padding-bottom:2px}
-  .btn-np{display:none}
-  .nsel{font-size:12px;padding:3px 5px}
-  .psel{font-size:12px;max-width:100px}
+  .btn-np,.psel,.nsel{display:none}
   .btn-np-visible{display:none}
   /* Summary */
   .sum-grid{grid-template-columns:1fr 1fr}
@@ -183,8 +300,20 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   .sk-card{padding:14px 12px}
   .sk-top{flex-direction:column;align-items:flex-start;gap:6px}
   #sk-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* Sankey preview (mobile) */
+  .sk-preview{padding:14px 14px}
+  .sk-preview-head{flex-wrap:wrap;gap:4px 10px}
+  .sk-preview-title{font-size:14px}
+  .sk-mini{height:130px}
   /* Wrap */
   .wrap{padding:14px 10px 80px}
+  .monthly-wrap{padding:14px 10px 112px}
+  .m-summary-value{font-size:23px}
+  .m-impact{font-size:25px}
+  .m-total{font-size:16px}
+  .m-item-name{font-size:16px}
+  .m-edit-grid{grid-template-columns:1fr 104px}
+  .person-switch-wrap{top:92px}
   /* Annual chart */
   .chart-card{padding:14px 12px}
   /* Guest banner */
@@ -291,8 +420,9 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   <div class="nav-brand">kakei<span>box</span></div>
   <div class="nav-center">
     <button class="nb" id="btn-prev">&#8249;</button>
-    <select class="nsel" id="sel-y"></select>
-    <select class="nsel" id="sel-m"></select>
+    <div class="nav-period" id="nav-period">2026年3月</div>
+    <select class="nsel nav-hidden" id="sel-y"></select>
+    <select class="nsel nav-hidden" id="sel-m"></select>
     <button class="nb" id="btn-next">&#8250;</button>
     <button class="nb nb-today" id="btn-today">今月</button>
   </div>
@@ -314,6 +444,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 <!-- ── VIEW TABS ── -->
 <div class="vtab-bar">
   <button class="vtab on" id="vt-m" onclick="setView('monthly')">月次</button>
+  <button class="vtab"    id="vt-g" onclick="setView('graph')">📈 グラフ</button>
   <button class="vtab"    id="vt-a" onclick="setView('annual')">📊 年間レポート</button>
 </div>
 
@@ -345,6 +476,22 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
       <button class="btn-add" onclick="openModal('expense')">＋ 支出を追加</button>
     </div>
   </div>
+  <!-- 収支フロー図プレビュー（タップでグラフページへ） -->
+  <div class="sk-preview" onclick="setView('graph')" role="button" tabindex="0"
+       aria-label="収支フロー図を全画面で見る"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setView('graph');}">
+    <div class="sk-preview-head">
+      <div class="sk-preview-title"><span class="ico">🔀</span>収支フロー図</div>
+      <div class="sk-preview-cta">全画面で見る<span class="arrow">→</span></div>
+    </div>
+    <div class="sk-preview-sub">収入がどこへ流れたかを可視化</div>
+    <div class="sk-mini"><div id="mini-sk"></div></div>
+  </div>
+</div>
+
+<!-- ══ GRAPH VIEW ══ -->
+<div id="view-graph" class="wrap" style="display:none">
+  <button class="gp-back" onclick="setView('monthly')">← 月次に戻る</button>
   <div class="sk-card">
     <div class="sk-top">
       <h2 id="sk-title">収支フロー図</h2>
@@ -504,8 +651,9 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 // ════════════════════════════════════════
 const now = new Date();
 let state = {personId:null, year:now.getFullYear(), month:now.getMonth()+1,
-             income:[], expense:[], mode:'simple', view:'monthly', ri:[], re:[]};
+             income:[], expense:[], mode:'simple', view:'monthly', ri:[], re:[], monthTab:'expense', quickType:'expense'};
 let persons=[], modalType='income', currentUser=null, guestMode=false;
+let modalPinDefault=false, pendingQuickAmount=0, monthlyShellReady=false, dragMeta=null;
 
 // ════════════════════════════════════════
 //  STORAGE
@@ -633,15 +781,24 @@ function updateTodayBtn(){
 function setView(v){
   state.view=v;
   document.getElementById('view-monthly').style.display=v==='monthly'?'':'none';
+  document.getElementById('view-graph').style.display  =v==='graph'  ?'':'none';
   document.getElementById('view-annual').style.display =v==='annual' ?'':'none';
   document.getElementById('vt-m').classList.toggle('on',v==='monthly');
+  document.getElementById('vt-g').classList.toggle('on',v==='graph');
   document.getElementById('vt-a').classList.toggle('on',v==='annual');
-  // hide month selector in annual mode
+  // hide month selector in annual mode (graph view keeps month context)
   document.getElementById('sel-m').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-prev').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-next').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-today').classList.toggle('hide-monthly', v==='annual');
   if(v==='annual'){saveData();drawAnnualView();}
+  else if(v==='graph'){
+    const ti=state.income.reduce((s,x)=>s+x.amount,0);
+    const te=state.expense.reduce((s,x)=>s+x.amount,0);
+    document.getElementById('sk-title').textContent=`${state.year}年${state.month}月 の収支フロー図`;
+    drawSankey(ti,te,ti-te);
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ════════════════════════════════════════
@@ -709,7 +866,9 @@ function recalc(){
   document.getElementById('ft-i').textContent=fmt(ti);
   document.getElementById('ft-e').textContent=fmt(te);
   document.getElementById('sk-title').textContent=`${state.year}年${state.month}月 の収支フロー図`;
-  drawSankey(ti,te,b);saveData();
+  drawMiniSankey(ti,te,b);
+  if(state.view==='graph')drawSankey(ti,te,b);
+  saveData();
 }
 function renderAll(){
   renderTable('income');renderTable('expense');
@@ -1057,6 +1216,29 @@ function buildSkLegend(nodes){
   document.getElementById('sk-legend').innerHTML=items.map(it=>`<div class="leg"><div class="leg-dot" style="background:${it.color}"></div>${it.label}</div>`).join('');
 }
 
+// ── ミニ Sankey（月次タブのプレビュー用・ラベルなし） ──
+function drawMiniSankey(ti,te,bal){
+  const wrap=document.getElementById('mini-sk');if(!wrap)return;
+  wrap.innerHTML='';
+  const iI=state.income.filter(x=>x.amount>0),eI=state.expense.filter(x=>x.amount>0);
+  if(!iI.length||ti===0){wrap.innerHTML='<div class="sk-mini-empty">収入・支出を入力するとフロー図が表示されます</div>';return;}
+  const{nodes:gn,links:gl}=state.mode==='category'?buildCatGraph(iI,eI,bal):buildSimpleGraph(iI,eI,bal);
+  const W=560,ML=60,MR=60,MT=14,MB=14,H=138;
+  const svg=d3.select('#mini-sk').append('svg')
+    .attr('viewBox',`0 0 ${W} ${H}`).attr('preserveAspectRatio','xMidYMid slice')
+    .attr('width','100%').attr('height','100%').style('display','block');
+  const sankey=d3.sankey().nodeId(d=>d._sid).nodeWidth(10).nodePadding(7).extent([[ML,MT],[W-MR,H-MB]]);
+  const nodesD3=gn.map((d,i)=>({...d,_sid:i}));
+  const graph=sankey({nodes:nodesD3,links:gl.map(d=>({...d}))});
+  svg.append('g').selectAll('path').data(graph.links).join('path')
+    .attr('d',d3.sankeyLinkHorizontal()).attr('fill','none')
+    .attr('stroke',d=>d.source.type==='center'?d.target.color||'#888':d.source.color||'#888')
+    .attr('stroke-opacity',.42).attr('stroke-width',d=>Math.max(1,d.width));
+  svg.append('g').selectAll('rect').data(graph.nodes).join('rect')
+    .attr('x',d=>d.x0).attr('y',d=>d.y0).attr('width',d=>d.x1-d.x0)
+    .attr('height',d=>Math.max(3,d.y1-d.y0)).attr('fill',d=>d.color||'#888').attr('rx',3);
+}
+
 // ════════════════════════════════════════
 //  TOOLTIP
 // ════════════════════════════════════════
@@ -1372,7 +1554,10 @@ document.getElementById('sel-p').addEventListener('change',e=>{
   }else switchPerson(e.target.value);
 });
 window.addEventListener('resize',()=>{
-  if(state.view==='monthly'){const ti=state.income.reduce((s,x)=>s+x.amount,0);const te=state.expense.reduce((s,x)=>s+x.amount,0);drawSankey(ti,te,ti-te);}
+  const ti=state.income.reduce((s,x)=>s+x.amount,0);
+  const te=state.expense.reduce((s,x)=>s+x.amount,0);
+  if(state.view==='monthly')drawMiniSankey(ti,te,ti-te);
+  else if(state.view==='graph')drawSankey(ti,te,ti-te);
   else drawAnnualView();
 });
 
