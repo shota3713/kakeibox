@@ -943,22 +943,36 @@ function saveData(){
     JSON.stringify({income:state.income,expense:state.expense,mode:state.mode}));
   if(currentUser)fsyncData(state.personId,state.year,state.month);
 }
+// テンプレ優先で、その月の表示配列を作る（毎月同じ額＝繰り返しは全月に差し込み／上書き）
+function mergeRecurring(monthItems,type,y,m){
+  const recs=(type==='income'?state.ri:state.re).filter(r=>isRecActive(r,y,m));
+  const recNames=new Set(recs.map(r=>r.name));
+  // 手入力（非繰り返し）だけ残す。期間外の繰り返し遺物と、アクティブ繰り返しの旧コピーは除外（下で作り直す）
+  const manual=monthItems.filter(it=>{
+    const r=recItem(type,it.name);
+    if(r&&!isRecActive(r,y,m))return false; // 期間外になった繰り返しは落とす
+    if(recNames.has(it.name))return false;   // アクティブ繰り返しはテンプレ値で作り直すので重複回避
+    return true;
+  });
+  // アクティブな繰り返しをテンプレ値で差し込み（同名衝突は繰り返し優先＝上書き）
+  const injected=recs.map(r=>({name:r.name,amount:r.amount,share:r.share?{...r.share}:{type:'self'}}));
+  return [...injected,...manual];
+}
 function loadData(pid,y,m){
   loadRecurring(pid);
-  // 保存済みの月でも、固定費が有効期間外なら遡及的に非表示にする
-  const dropInactive=(arr,type)=>arr.filter(it=>{const r=recItem(type,it.name);return !r||isRecActive(r,y,m);});
   const s=localStorage.getItem(dKey(pid,y,m));
-  if(s){const d=JSON.parse(s);state.income=dropInactive(d.income||[],'income');state.expense=dropInactive(d.expense||[],'expense');state.mode=d.mode||'simple';}
-  else{
-    // 未入力月は、その月に有効な固定費だけを差し込む
-    state.income=state.ri.filter(x=>isRecActive(x,y,m)).map(x=>({name:x.name,amount:x.amount,share:x.share?{...x.share}:{type:'self'}}));
-    state.expense=state.re.filter(x=>isRecActive(x,y,m)).map(x=>({name:x.name,amount:x.amount,share:x.share?{...x.share}:{type:'self'}}));
-    // 前月残高を前月繰越金として自動セット
+  const raw=s?JSON.parse(s):null;
+  state.mode=(raw&&raw.mode)||'simple';
+  // 既に開いた月でも、有効な繰り返しは毎月テンプレ値で反映する
+  state.income=mergeRecurring(raw?(raw.income||[]):[],'income',y,m);
+  state.expense=mergeRecurring(raw?(raw.expense||[]):[],'expense',y,m);
+  // 未入力月のみ、前月残高を前月繰越金として自動セット
+  if(!s){
     const pm=m===1?12:m-1,py=m===1?y-1:y;
     const ps=localStorage.getItem(dKey(pid,py,pm));
     if(ps){
       const pd=JSON.parse(ps);
-      const bal=(pd.income||[]).reduce((t,x)=>t+x.amount,0)-(pd.expense||[]).reduce((t,x)=>t+x.amount,0);
+      const bal=(pd.income||[]).reduce((t,x)=>t+(x.amount||0),0)-(pd.expense||[]).reduce((t,x)=>t+(x.amount||0),0);
       if(bal>0){
         const i=state.income.findIndex(x=>x.name==='前月繰越金');
         if(i>=0)state.income[i].amount=bal;
@@ -984,6 +998,14 @@ function loadRecurring(pid){
 }
 function isRec(type,name){return(type==='income'?state.ri:state.re).some(x=>x.name===name);}
 function recItem(type,name){return(type==='income'?state.ri:state.re).find(x=>x.name===name);}
+// 項目の金額・分担を繰り返しテンプレへ同期（テンプレ優先＝全月に波及）
+function syncRecFromItem(type,item){
+  const r=recItem(type,item.name);
+  if(!r)return;
+  r.amount=item.amount;
+  r.share=item.share?{...item.share}:{type:'self'};
+  saveRecurring();
+}
 // くり返しの開始/終了 選択肢（カード内インライン用）
 function recYearOpts(val){
   const cy=new Date().getFullYear();
@@ -1221,6 +1243,8 @@ function buildItemCard(type,item,idx,fixed){
       amtInp.onblur=()=>{
         const arr=state[type==='income'?'income':'expense'];
         arr[idx].amount=parseAmt(amtInp.value);
+        // 繰り返し項目なら金額もテンプレへ同期（毎月同じ額＝全月に波及）
+        if(recRef){recRef.amount=arr[idx].amount;saveRecurring();}
         amtInp.value=arr[idx].amount?fmt(arr[idx].amount):'';
         renderCards(type);recalc();
       };
@@ -1412,6 +1436,7 @@ function openShareSheet(type,idx){
           let val=parseAmt(inp.value);
           if(r.type==='ratio')val=Math.max(0,Math.min(100,val));
           item.share.value=val;
+          syncRecFromItem(type,item);
           renderCards(type);recalc();
         }
       };
@@ -1426,6 +1451,7 @@ function openShareSheet(type,idx){
         value=val;
       }
       item.share={type:r.type,...(value!==undefined?{value}:{})};
+      syncRecFromItem(type,item);
       renderCards(type);recalc();
       closeShareSheet();
     };
