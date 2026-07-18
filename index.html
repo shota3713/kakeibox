@@ -417,6 +417,12 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   background:#fff;color:var(--muted);
 }
 .kbox-pin-toggle.on{background:var(--pin-bg);color:var(--pin-fg);border-color:var(--pin-bg)}
+/* カード内 くり返し（開始/終了）インライン設定 */
+.kbox-rec-row .kbox-rec-range{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;
+}
+.kbox-rec-row .fx-sel{padding:5px 6px;font-size:12px}
+.kbox-rec-note{padding-top:6px;font-size:10px;color:var(--muted);line-height:1.5;text-align:right}
 /* FAB */
 .kbox-fab{
   position:fixed;right:20px;bottom:24px;z-index:80;
@@ -978,6 +984,31 @@ function loadRecurring(pid){
 }
 function isRec(type,name){return(type==='income'?state.ri:state.re).some(x=>x.name===name);}
 function recItem(type,name){return(type==='income'?state.ri:state.re).find(x=>x.name===name);}
+// くり返しの開始/終了 選択肢（カード内インライン用）
+function recYearOpts(val){
+  const cy=new Date().getFullYear();
+  let o=`<option value=""${!val?' selected':''}>—</option>`;
+  for(let y=cy-6;y<=cy+2;y++)o+=`<option value="${y}"${val==y?' selected':''}>${y}年</option>`;
+  return o;
+}
+function recMonthOpts(val){
+  let o=`<option value=""${!val?' selected':''}>—</option>`;
+  for(let m=1;m<=12;m++)o+=`<option value="${m}"${val==m?' selected':''}>${m}月</option>`;
+  return o;
+}
+// カード内で開始/終了を変更 → 保存し、有効期間フィルタを今月に反映
+function applyRecRange(type,name,key,val){
+  const rec=recItem(type,name);
+  if(!rec)return;
+  rec[key]=val===''?null:parseInt(val,10);
+  // 年・月の片方だけの指定はクリア（保存時の整合と同じ）
+  if((key==='startY'||key==='startM')&&(!rec.startY||!rec.startM)){rec.startY=null;rec.startM=null;}
+  if((key==='endY'||key==='endM')&&(!rec.endY||!rec.endM)){rec.endY=null;rec.endM=null;}
+  saveRecurring();
+  saveData();
+  loadData(state.personId,state.year,state.month);
+  renderAll();
+}
 // 年月を比較用の通し番号に
 function ymIndex(y,m){return y*12+(m-1);}
 // 固定費recが (y,m) の月に有効か（開始未設定=過去すべて、終了未設定=継続中）
@@ -1114,7 +1145,7 @@ function renderCards(type){
     target.appendChild(buildItemCard(type,item,idx,fixed));
     if(fixed)fxCount++;else vrCount++;
   });
-  if(!fxCount){fixedEl.innerHTML=`<div class="kbox-empty">固定項目はありません（項目を追加して📌をオンにすると固定になります）</div>`;}
+  if(!fxCount){fixedEl.innerHTML=`<div class="kbox-empty">くり返し項目はありません（項目を開いて「🔁 今日から繰り返し」で登録）</div>`;}
   if(!vrCount){variableEl.innerHTML=`<div class="kbox-empty">項目がありません。右下の＋から追加</div>`;}
 }
 
@@ -1146,7 +1177,21 @@ function buildItemCard(type,item,idx,fixed){
   if(partnerExists){
     html+=`<div class="kbox-detail-row"><span>分担</span><button class="kbox-share-badge ${sh.type}" data-share-open="${type}_${idx}">${shareLabel(sh)}</button></div>`;
   }
-  html+=`<div class="kbox-detail-row"><span>毎月の固定項目</span><button class="kbox-pin-toggle${fixed?' on':''}" data-pin-toggle="${type}_${idx}">📌 ${fixed?'解除':'固定にする'}</button></div>`;
+  if(fixed){
+    const rec=recItem(type,item.name)||{};
+    html+=`<div class="kbox-detail-row"><span>🔁 毎月くり返し</span><button class="kbox-pin-toggle on" data-pin-toggle="${type}_${idx}">解除</button></div>`;
+    html+=`<div class="kbox-detail-row kbox-rec-row"><span>開始</span><span class="kbox-rec-range">`
+      +`<select class="fx-sel" data-rec="startY" data-type="${type}" data-idx="${idx}">${recYearOpts(rec.startY)}</select>`
+      +`<select class="fx-sel" data-rec="startM" data-type="${type}" data-idx="${idx}">${recMonthOpts(rec.startM)}</select>`
+      +`</span></div>`;
+    html+=`<div class="kbox-detail-row kbox-rec-row"><span>終了</span><span class="kbox-rec-range">`
+      +`<select class="fx-sel" data-rec="endY" data-type="${type}" data-idx="${idx}">${recYearOpts(rec.endY)}</select>`
+      +`<select class="fx-sel" data-rec="endM" data-type="${type}" data-idx="${idx}">${recMonthOpts(rec.endM)}</select>`
+      +`</span></div>`;
+    html+=`<div class="kbox-rec-note">終了を空欄にすると継続中。開始・終了の月の範囲だけに反映されます。</div>`;
+  }else{
+    html+=`<div class="kbox-detail-row"><span>毎月くり返し</span><button class="kbox-pin-toggle" data-pin-toggle="${type}_${idx}">🔁 今日から繰り返し</button></div>`;
+  }
   html+=`<div class="kbox-detail-row"><span></span><button class="kbox-del-btn" data-del="${type}_${idx}">この項目を削除</button></div>`;
   detail.innerHTML=html;
   det.appendChild(detail);
@@ -1180,6 +1225,10 @@ function buildItemCard(type,item,idx,fixed){
     if(shareBtn)shareBtn.onclick=e=>{e.preventDefault();e.stopPropagation();openShareSheet(type,idx);};
     const pinBtn=detail.querySelector('[data-pin-toggle]');
     if(pinBtn)pinBtn.onclick=e=>{e.preventDefault();e.stopPropagation();toggleRec(type,item.name,item.amount);renderCards(type);};
+    detail.querySelectorAll('select[data-rec]').forEach(sel=>{
+      sel.onclick=e=>e.stopPropagation();
+      sel.onchange=e=>{e.stopPropagation();applyRecRange(type,item.name,sel.getAttribute('data-rec'),sel.value);};
+    });
     const delBtn=detail.querySelector('[data-del]');
     if(delBtn)delBtn.onclick=e=>{e.preventDefault();e.stopPropagation();deleteItem(type,idx);};
   },0);
@@ -2267,7 +2316,7 @@ function fxMonthSel(idx,key,val){
 function renderFixedList(){
   const arr=fixedDraft[fixedEditTab];
   const el=document.getElementById('fixed-list');
-  if(!arr.length){el.innerHTML=`<div class="fx-empty">${fixedEditTab==='income'?'収入':'支出'}の固定費はまだありません。<br>各項目の「📌 固定にする」で登録できます。</div>`;return;}
+  if(!arr.length){el.innerHTML=`<div class="fx-empty">${fixedEditTab==='income'?'収入':'支出'}のくり返し項目はまだありません。<br>各項目の「🔁 今日から繰り返し」で登録できます。</div>`;return;}
   el.innerHTML=arr.map((it,idx)=>`
     <div class="fx-row">
       <div class="fx-row-top">
