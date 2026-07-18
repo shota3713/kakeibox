@@ -943,20 +943,34 @@ function saveData(){
     JSON.stringify({income:state.income,expense:state.expense,mode:state.mode}));
   if(currentUser)fsyncData(state.personId,state.year,state.month);
 }
-// テンプレ優先で、その月の表示配列を作る（毎月同じ額＝繰り返しは全月に差し込み／上書き）
+// その月の表示配列を作る。繰り返しは項目ごとに金額固定/変動を選べる
+//  ・金額固定(lockAmount!==false): テンプレ値で毎月上書き（同名衝突は繰り返し優先）
+//  ・金額変動(lockAmount===false): 毎月出すが金額はその月の値を保持（未入力月はテンプレ額を初期値に）
 function mergeRecurring(monthItems,type,y,m){
   const recs=(type==='income'?state.ri:state.re).filter(r=>isRecActive(r,y,m));
-  const recNames=new Set(recs.map(r=>r.name));
-  // 手入力（非繰り返し）だけ残す。期間外の繰り返し遺物と、アクティブ繰り返しの旧コピーは除外（下で作り直す）
-  const manual=monthItems.filter(it=>{
+  const recByName=new Map(recs.map(r=>[r.name,r]));
+  const used=new Set();
+  const result=[];
+  monthItems.forEach(it=>{
     const r=recItem(type,it.name);
-    if(r&&!isRecActive(r,y,m))return false; // 期間外になった繰り返しは落とす
-    if(recNames.has(it.name))return false;   // アクティブ繰り返しはテンプレ値で作り直すので重複回避
-    return true;
+    if(r&&!isRecActive(r,y,m))return; // 期間外になった繰り返しは落とす
+    const act=recByName.get(it.name);
+    if(!act){result.push(it);return;} // 非繰り返しの手入力はそのまま
+    used.add(it.name);
+    if(act.lockAmount!==false){
+      // 固定：テンプレ値で上書き
+      result.push({name:act.name,amount:act.amount,share:act.share?{...act.share}:{type:'self'}});
+    }else{
+      // 変動：その月の金額・分担を保持
+      result.push({name:act.name,amount:it.amount,share:it.share?{...it.share}:(act.share?{...act.share}:{type:'self'})});
+    }
   });
-  // アクティブな繰り返しをテンプレ値で差し込み（同名衝突は繰り返し優先＝上書き）
-  const injected=recs.map(r=>({name:r.name,amount:r.amount,share:r.share?{...r.share}:{type:'self'}}));
-  return [...injected,...manual];
+  // まだその月に無いアクティブ繰り返しを差し込む（変動でも初期値はテンプレ額）
+  recs.forEach(r=>{
+    if(used.has(r.name))return;
+    result.push({name:r.name,amount:r.amount,share:r.share?{...r.share}:{type:'self'}});
+  });
+  return result;
 }
 function loadData(pid,y,m){
   loadRecurring(pid);
@@ -1050,8 +1064,8 @@ function toggleRec(type,name,amount){
     const dataArr=type==='income'?state.income:state.expense;
     const src=dataArr.find(x=>x.name===name);
     const share=src?.share?{...src.share}:{type:'self'};
-    // ピンした月を開始月にして、それ以前の月には出さない
-    arr.push({name,amount,share,startY:state.year,startM:state.month,endY:null,endM:null});
+    // ピンした月を開始月にして、それ以前の月には出さない。lockAmount=金額固定（既定ON）
+    arr.push({name,amount,share,startY:state.year,startM:state.month,endY:null,endM:null,lockAmount:true});
   }
   saveRecurring();renderCards(type);
 }
@@ -1204,7 +1218,9 @@ function buildItemCard(type,item,idx,fixed){
   }
   if(fixed){
     const rec=recItem(type,item.name)||{};
+    const locked=rec.lockAmount!==false;
     html+=`<div class="kbox-detail-row"><span>🔁 毎月くり返し</span><button class="kbox-pin-toggle on" data-pin-toggle="${type}_${idx}">解除</button></div>`;
+    html+=`<div class="kbox-detail-row"><span>金額</span><button class="kbox-pin-toggle${locked?' on':''}" data-lock-toggle="${type}_${idx}">${locked?'🔒 毎月同じ（固定）':'✏️ 毎月入力（変動）'}</button></div>`;
     html+=`<div class="kbox-detail-row kbox-rec-row"><span>開始</span><span class="kbox-rec-range">`
       +`<select class="fx-sel" data-rec="startY" data-type="${type}" data-idx="${idx}">${recYearOpts(rec.startY)}</select>`
       +`<select class="fx-sel" data-rec="startM" data-type="${type}" data-idx="${idx}">${recMonthOpts(rec.startM)}</select>`
@@ -1213,7 +1229,7 @@ function buildItemCard(type,item,idx,fixed){
       +`<select class="fx-sel" data-rec="endY" data-type="${type}" data-idx="${idx}">${recYearOpts(rec.endY)}</select>`
       +`<select class="fx-sel" data-rec="endM" data-type="${type}" data-idx="${idx}">${recMonthOpts(rec.endM)}</select>`
       +`</span></div>`;
-    html+=`<div class="kbox-rec-note">終了を空欄にすると継続中。開始・終了の月の範囲だけに反映されます。</div>`;
+    html+=`<div class="kbox-rec-note">金額「固定」＝毎月同じ額（どの月で変えても全月に反映）。「変動」＝毎月入力（その月だけ変わる）。終了を空欄にすると継続中。</div>`;
   }else{
     html+=`<div class="kbox-detail-row"><span>毎月くり返し</span><button class="kbox-pin-toggle" data-pin-toggle="${type}_${idx}">🔁 今日から繰り返し</button></div>`;
   }
@@ -1254,6 +1270,10 @@ function buildItemCard(type,item,idx,fixed){
     if(shareBtn)shareBtn.onclick=e=>{e.preventDefault();e.stopPropagation();openShareSheet(type,idx);};
     const pinBtn=detail.querySelector('[data-pin-toggle]');
     if(pinBtn)pinBtn.onclick=e=>{e.preventDefault();e.stopPropagation();toggleRec(type,item.name,item.amount);renderCards(type);};
+    const lockBtn=detail.querySelector('[data-lock-toggle]');
+    if(lockBtn)lockBtn.onclick=e=>{e.preventDefault();e.stopPropagation();
+      if(recRef){recRef.lockAmount=(recRef.lockAmount===false);saveRecurring();saveData();loadData(state.personId,state.year,state.month);renderAll();}
+    };
     detail.querySelectorAll('select[data-rec]').forEach(sel=>{
       sel.onclick=e=>e.stopPropagation();
       sel.onchange=e=>{e.stopPropagation();applyRecRange(type,item.name,sel.getAttribute('data-rec'),sel.value);};
