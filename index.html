@@ -12,6 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -39,8 +40,11 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .auth-btn{width:auto;padding:0 10px;font-size:11px;font-weight:700;white-space:nowrap}
 .nsel{background:rgba(255,255,255,.13);border:none;border-radius:6px;color:var(--navfg);
   padding:4px 8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
-  outline:none;-webkit-appearance:none;appearance:none}
+  outline:none;-webkit-appearance:none;appearance:none;text-align:center;text-align-last:center}
 .nsel option{background:#1e293b;color:#f8fafc}
+/* 固定幅で月変更時の位置ずれを防止 */
+#sel-y{width:66px}
+#sel-m{width:54px}
 .psel{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);
   border-radius:6px;color:var(--navfg);padding:5px 10px;font-size:13px;font-weight:600;
   cursor:pointer;font-family:inherit;outline:none}
@@ -112,6 +116,11 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 .mode-btn{padding:5px 13px;font-size:12px;font-weight:600;border:none;cursor:pointer;
   background:transparent;font-family:inherit;color:var(--muted);transition:all .15s}
 .mode-btn.on{background:var(--income);color:#fff}
+
+/* ── Graph page ── */
+.gp-back{display:inline-flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:13px;font-weight:700;font-family:inherit;padding:4px 0;margin-bottom:14px;transition:color .15s}
+.gp-back:hover{color:var(--income)}
 
 /* ── CHARTS (annual view) ── */
 .chart-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);
@@ -254,6 +263,39 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 .cat-kw-inp{border:1px dashed #94a3b8;border-radius:20px;padding:2px 10px;font-size:11px;
   font-family:inherit;outline:none;min-width:90px;max-width:140px;background:transparent;color:var(--text)}
 .cat-kw-inp:focus{border-color:var(--income)}
+/* クレカ明細分析 */
+.cc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.cc-status{font-size:12px;color:var(--muted);font-weight:600;min-height:18px;margin:4px 0}
+.cc-status.err{color:var(--expense)}
+.cc-status.ok{color:var(--income)}
+.cc-cat-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.cc-cat-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.cc-cat-name{font-size:13px;font-weight:700;flex-shrink:0;min-width:96px}
+.cc-cat-bar-wrap{flex:1;height:8px;background:#eef2f7;border-radius:5px;overflow:hidden}
+.cc-cat-bar{height:100%;border-radius:5px}
+.cc-cat-amt{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;min-width:84px;text-align:right}
+.cc-empty{font-size:12px;color:var(--muted);padding:14px 0;line-height:1.7}
+.cc-total{display:flex;justify-content:space-between;align-items:baseline;margin:10px 0 6px}
+.cc-total-lbl{font-size:12px;color:var(--muted);font-weight:700}
+.cc-total-val{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+/* 固定費の管理 */
+#fixed-list{overflow-y:auto;flex:1;margin-top:10px;padding-right:2px}
+.fx-row{padding:11px 0;border-bottom:1px solid var(--border)}
+.fx-row-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.fx-name{font-size:14px;font-weight:800;color:var(--text)}
+.fx-del{background:none;border:none;cursor:pointer;color:#fca5a5;font-size:12px;font-weight:700;padding:2px 6px}
+.fx-del:hover{color:var(--expense)}
+.fx-fields{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.fx-f{display:flex;align-items:center;gap:6px}
+.fx-lbl{font-size:11px;font-weight:700;color:var(--muted);min-width:28px}
+.fx-amt{width:104px;padding:5px 9px;border:1px solid var(--border);border-radius:7px;
+  font-size:13px;font-family:inherit;outline:none;text-align:right;font-variant-numeric:tabular-nums}
+.fx-amt:focus{border-color:var(--income)}
+.fx-sel{padding:5px 6px;border:1px solid var(--border);border-radius:7px;font-size:12px;
+  font-family:inherit;outline:none;background:#fff;cursor:pointer}
+.fx-sel:focus{border-color:var(--income)}
+.fx-hint{font-size:10px;color:var(--muted)}
+.fx-empty{padding:24px 12px;text-align:center;color:var(--muted);font-size:12px;line-height:1.7}
 /* カテゴリプレビュー（項目追加モーダル） */
 #m-cat-preview{display:none;align-items:center;gap:6px;margin-top:8px;
   padding:5px 10px;background:#f0fdfa;border-radius:8px;font-size:12px;color:#0f766e}
@@ -375,6 +417,12 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   background:#fff;color:var(--muted);
 }
 .kbox-pin-toggle.on{background:var(--pin-bg);color:var(--pin-fg);border-color:var(--pin-bg)}
+/* カード内 くり返し（開始/終了）インライン設定 */
+.kbox-rec-row .kbox-rec-range{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;
+}
+.kbox-rec-row .fx-sel{padding:5px 6px;font-size:12px}
+.kbox-rec-note{padding-top:6px;font-size:10px;color:var(--muted);line-height:1.5;text-align:right}
 /* FAB */
 .kbox-fab{
   position:fixed;right:20px;bottom:24px;z-index:80;
@@ -496,6 +544,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <select class="psel" id="sel-p"></select>
     <button class="btn-np" id="btn-np">＋ 人物</button>
     <button class="nb" id="btn-group" onclick="openGroupModal()" title="グループ" style="display:none">👥</button>
+    <button class="nb" id="btn-fixed" onclick="openFixedSettings()" title="固定費の管理">📌</button>
     <button class="nb" id="btn-cat-settings" onclick="openCatSettings()" title="カテゴリ設定">⚙</button>
     <a href="./landing.html" class="nb auth-btn" title="kakeiboxについて" style="text-decoration:none">?</a>
     <div id="auth-area"></div>
@@ -530,11 +579,11 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <div class="sum-card sb"><div class="sum-lbl">収支</div><div class="sum-val" id="v-balance">¥0</div></div>
   </div>
 
-  <!-- 支出/収入/グラフ タブ -->
+  <!-- 支出/収入/グラフ タブ（グラフは専用ページへ遷移） -->
   <div class="kbox-mtabs">
     <button class="on" data-mtab="expense" onclick="setMtab('expense')">支出</button>
     <button data-mtab="income" onclick="setMtab('income')">収入</button>
-    <button data-mtab="graph" onclick="setMtab('graph')">グラフ</button>
+    <button data-mtab="graph" onclick="setView('graph')">📈 グラフ</button>
   </div>
 
   <!-- 支出パネル -->
@@ -561,22 +610,21 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     </div>
   </div>
 
-  <!-- グラフパネル -->
-  <div class="kbox-panel" data-panel="graph">
-    <div class="action-bar">
-      <button class="btn-action" onclick="copyPrevMonth()">📋 前月からコピー</button>
-    </div>
-    <div class="sk-card">
-      <div class="sk-top">
-        <h2 id="sk-title">収支フロー図</h2>
-        <div class="mode-wrap">
-          <button class="mode-btn on" id="btn-simple" onclick="setMode('simple')">シンプル</button>
-          <button class="mode-btn"    id="btn-cat"    onclick="setMode('category')">カテゴリ別</button>
-        </div>
+</div>
+
+<!-- ══ GRAPH VIEW ══ -->
+<div id="view-graph" class="wrap" style="display:none">
+  <button class="gp-back" onclick="setView('monthly')">← 月次に戻る</button>
+  <div class="sk-card">
+    <div class="sk-top">
+      <h2 id="sk-title">収支フロー図</h2>
+      <div class="mode-wrap">
+        <button class="mode-btn on" id="btn-simple" onclick="setMode('simple')">シンプル</button>
+        <button class="mode-btn"    id="btn-cat"    onclick="setMode('category')">カテゴリ別</button>
       </div>
-      <div class="legend" id="sk-legend"></div>
-      <div id="sk-wrap"></div>
     </div>
+    <div class="legend" id="sk-legend"></div>
+    <div id="sk-wrap"></div>
   </div>
 </div>
 
@@ -587,7 +635,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <div class="sum-card si"><div class="sum-lbl">年間収入</div><div class="sum-val" id="ay-i">¥0</div></div>
     <div class="sum-card se"><div class="sum-lbl">年間支出</div><div class="sum-val" id="ay-e">¥0</div></div>
     <div class="sum-card sb"><div class="sum-lbl">年間収支</div><div class="sum-val" id="ay-b">¥0</div></div>
-    <div class="sum-card sc"><div class="sum-lbl">平均貯蓄率</div><div class="sum-val" id="ay-s">–</div></div>
+    <div class="sum-card sc"><div class="sum-lbl">月平均支出</div><div class="sum-val" id="ay-avg">–</div></div>
   </div>
 
   <!-- 月別収支 bar chart -->
@@ -626,8 +674,22 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   <div class="chart-card">
     <div class="chart-head">月別サマリー</div>
     <div style="overflow-x:auto">
-      <table class="bt" id="month-tbl" style="min-width:600px"></table>
+      <table class="bt" id="month-tbl" style="min-width:360px;width:100%"></table>
     </div>
+  </div>
+
+  <!-- クレカ明細分析（CSV取込）— classifyCreditCsv Function 未デプロイのため本番では非表示 -->
+  <div class="chart-card" style="display:none">
+    <div class="cc-head">
+      <div>
+        <div class="chart-head" style="margin-bottom:2px">クレカ明細の分析</div>
+        <div class="chart-sub" style="margin:0">明細CSVを取り込むと、AIが形式を問わず自動分類します</div>
+      </div>
+      <button class="btn-action" id="cc-import-btn" onclick="document.getElementById('cc-file').click()">📄 明細CSVを取込</button>
+      <input type="file" id="cc-file" accept=".csv,text/csv,text/plain" style="display:none" onchange="onCreditCsvSelected(this)">
+    </div>
+    <div id="cc-status" class="cc-status"></div>
+    <div id="cc-breakdown"></div>
   </div>
 </div>
 
@@ -679,6 +741,25 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <div style="display:flex;gap:8px;margin-top:12px">
       <button class="m-close" style="margin:0;flex:1;font-size:12px" onclick="resetCats()">デフォルトに戻す</button>
       <button class="m-ok"    style="flex:2"                          onclick="saveCatsAndClose()">保存して閉じる</button>
+    </div>
+  </div>
+</div>
+<!-- ── 固定費の管理モーダル ── -->
+<div class="ov" id="fixed-ov" onclick="if(event.target===this)closeFixedSettings()">
+  <div class="mbox catset-box">
+    <div class="catset-hd">
+      <div class="m-title" style="margin:0">📌 固定費の管理</div>
+      <button class="btn-x" style="font-size:18px;color:#94a3b8;padding:2px 6px" onclick="closeFixedSettings()">✕</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin:0 0 8px;line-height:1.6">毎月コピーされる固定項目の一覧です。開始月より前・終了月より後の月には反映されません。</p>
+    <div class="catset-tabs">
+      <button class="catset-tab"   id="fst-income"  onclick="switchFixedTab('income')">収入の固定費</button>
+      <button class="catset-tab on" id="fst-expense" onclick="switchFixedTab('expense')">支出の固定費</button>
+    </div>
+    <div id="fixed-list"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="m-close" style="margin:0;flex:1;font-size:12px" onclick="closeFixedSettings()">キャンセル</button>
+      <button class="m-ok"    style="flex:2"                          onclick="saveFixedAndClose()">保存して閉じる</button>
     </div>
   </div>
 </div>
@@ -864,10 +945,14 @@ function saveData(){
 }
 function loadData(pid,y,m){
   loadRecurring(pid);
+  // 保存済みの月でも、固定費が有効期間外なら遡及的に非表示にする
+  const dropInactive=(arr,type)=>arr.filter(it=>{const r=recItem(type,it.name);return !r||isRecActive(r,y,m);});
   const s=localStorage.getItem(dKey(pid,y,m));
-  if(s){const d=JSON.parse(s);state.income=d.income||[];state.expense=d.expense||[];state.mode=d.mode||'simple';}
+  if(s){const d=JSON.parse(s);state.income=dropInactive(d.income||[],'income');state.expense=dropInactive(d.expense||[],'expense');state.mode=d.mode||'simple';}
   else{
-    state.income=state.ri.map(x=>({...x}));state.expense=state.re.map(x=>({...x}));
+    // 未入力月は、その月に有効な固定費だけを差し込む
+    state.income=state.ri.filter(x=>isRecActive(x,y,m)).map(x=>({name:x.name,amount:x.amount,share:x.share?{...x.share}:{type:'self'}}));
+    state.expense=state.re.filter(x=>isRecActive(x,y,m)).map(x=>({name:x.name,amount:x.amount,share:x.share?{...x.share}:{type:'self'}}));
     // 前月残高を前月繰越金として自動セット
     const pm=m===1?12:m-1,py=m===1?y-1:y;
     const ps=localStorage.getItem(dKey(pid,py,pm));
@@ -898,6 +983,41 @@ function loadRecurring(pid){
   else{state.ri=[];state.re=[];}
 }
 function isRec(type,name){return(type==='income'?state.ri:state.re).some(x=>x.name===name);}
+function recItem(type,name){return(type==='income'?state.ri:state.re).find(x=>x.name===name);}
+// くり返しの開始/終了 選択肢（カード内インライン用）
+function recYearOpts(val){
+  const cy=new Date().getFullYear();
+  let o=`<option value=""${!val?' selected':''}>—</option>`;
+  for(let y=cy-6;y<=cy+2;y++)o+=`<option value="${y}"${val==y?' selected':''}>${y}年</option>`;
+  return o;
+}
+function recMonthOpts(val){
+  let o=`<option value=""${!val?' selected':''}>—</option>`;
+  for(let m=1;m<=12;m++)o+=`<option value="${m}"${val==m?' selected':''}>${m}月</option>`;
+  return o;
+}
+// カード内で開始/終了を変更 → 保存し、有効期間フィルタを今月に反映
+function applyRecRange(type,name,key,val){
+  const rec=recItem(type,name);
+  if(!rec)return;
+  rec[key]=val===''?null:parseInt(val,10);
+  // 年・月の片方だけの指定はクリア（保存時の整合と同じ）
+  if((key==='startY'||key==='startM')&&(!rec.startY||!rec.startM)){rec.startY=null;rec.startM=null;}
+  if((key==='endY'||key==='endM')&&(!rec.endY||!rec.endM)){rec.endY=null;rec.endM=null;}
+  saveRecurring();
+  saveData();
+  loadData(state.personId,state.year,state.month);
+  renderAll();
+}
+// 年月を比較用の通し番号に
+function ymIndex(y,m){return y*12+(m-1);}
+// 固定費recが (y,m) の月に有効か（開始未設定=過去すべて、終了未設定=継続中）
+function isRecActive(rec,y,m){
+  const t=ymIndex(y,m);
+  if(rec.startY&&rec.startM&&t<ymIndex(rec.startY,rec.startM))return false;
+  if(rec.endY&&rec.endM&&t>ymIndex(rec.endY,rec.endM))return false;
+  return true;
+}
 function toggleRec(type,name,amount){
   const arr=type==='income'?state.ri:state.re;
   const i=arr.findIndex(x=>x.name===name);
@@ -907,7 +1027,8 @@ function toggleRec(type,name,amount){
     const dataArr=type==='income'?state.income:state.expense;
     const src=dataArr.find(x=>x.name===name);
     const share=src?.share?{...src.share}:{type:'self'};
-    arr.push({name,amount,share});
+    // ピンした月を開始月にして、それ以前の月には出さない
+    arr.push({name,amount,share,startY:state.year,startM:state.month,endY:null,endM:null});
   }
   saveRecurring();renderCards(type);
 }
@@ -915,18 +1036,6 @@ function toggleRec(type,name,amount){
 // ════════════════════════════════════════
 //  COPY PREV MONTH
 // ════════════════════════════════════════
-function copyPrevMonth(){
-  const pm=state.month===1?12:state.month-1,py=state.month===1?state.year-1:state.year;
-  const s=localStorage.getItem(dKey(state.personId,py,pm));
-  if(!s){alert(`${py}年${pm}月のデータがありません`);return;}
-  const has=state.income.some(x=>x.amount>0)||state.expense.some(x=>x.amount>0);
-  if(has&&!confirm('現在の入力内容を前月データで上書きしますか？'))return;
-  const d=JSON.parse(s);
-  state.income=JSON.parse(JSON.stringify(d.income||[]));
-  state.expense=JSON.parse(JSON.stringify(d.expense||[]));
-  renderTable('income');renderTable('expense');recalc();
-}
-
 // ════════════════════════════════════════
 //  PERSONS
 // ════════════════════════════════════════
@@ -963,7 +1072,8 @@ function updateTodayBtn(){
   const n=new Date();
   const isToday=state.year===n.getFullYear()&&state.month===n.getMonth()+1;
   const btn=document.getElementById('btn-today');
-  if(btn)btn.style.display=isToday?'none':'flex';
+  // display:none だと幅が消えて中央位置がずれるため visibility で領域を保持
+  if(btn)btn.style.visibility=isToday?'hidden':'visible';
 }
 
 // ════════════════════════════════════════
@@ -972,15 +1082,27 @@ function updateTodayBtn(){
 function setView(v){
   state.view=v;
   document.getElementById('view-monthly').style.display=v==='monthly'?'':'none';
+  document.getElementById('view-graph').style.display  =v==='graph'  ?'':'none';
   document.getElementById('view-annual').style.display =v==='annual' ?'':'none';
-  document.getElementById('vt-m').classList.toggle('on',v==='monthly');
+  document.getElementById('vt-m').classList.toggle('on',v==='monthly'||v==='graph');
   document.getElementById('vt-a').classList.toggle('on',v==='annual');
-  // hide month selector in annual mode
+  // hide month selector in annual mode (graph view keeps month context)
   document.getElementById('sel-m').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-prev').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-next').classList.toggle('hide-monthly', v==='annual');
   document.getElementById('btn-today').classList.toggle('hide-monthly', v==='annual');
   if(v==='annual'){saveData();drawAnnualView();}
+  else if(v==='graph'){
+    // グラフは開くたびにシンプル表示から始める
+    state.mode='simple';
+    document.getElementById('btn-simple').classList.add('on');
+    document.getElementById('btn-cat').classList.remove('on');
+    const ti=state.income.reduce((s,x)=>s+displayAmount(x),0);
+    const te=state.expense.reduce((s,x)=>s+displayAmount(x),0);
+    document.getElementById('sk-title').textContent=`${state.year}年${state.month}月 の収支フロー図`;
+    drawSankey(ti,te,ti-te);
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ════════════════════════════════════════
@@ -1023,7 +1145,7 @@ function renderCards(type){
     target.appendChild(buildItemCard(type,item,idx,fixed));
     if(fixed)fxCount++;else vrCount++;
   });
-  if(!fxCount){fixedEl.innerHTML=`<div class="kbox-empty">固定項目はありません（項目を追加して📌をオンにすると固定になります）</div>`;}
+  if(!fxCount){fixedEl.innerHTML=`<div class="kbox-empty">くり返し項目はありません（項目を開いて「🔁 今日から繰り返し」で登録）</div>`;}
   if(!vrCount){variableEl.innerHTML=`<div class="kbox-empty">項目がありません。右下の＋から追加</div>`;}
 }
 
@@ -1055,7 +1177,21 @@ function buildItemCard(type,item,idx,fixed){
   if(partnerExists){
     html+=`<div class="kbox-detail-row"><span>分担</span><button class="kbox-share-badge ${sh.type}" data-share-open="${type}_${idx}">${shareLabel(sh)}</button></div>`;
   }
-  html+=`<div class="kbox-detail-row"><span>毎月の固定項目</span><button class="kbox-pin-toggle${fixed?' on':''}" data-pin-toggle="${type}_${idx}">📌 ${fixed?'解除':'固定にする'}</button></div>`;
+  if(fixed){
+    const rec=recItem(type,item.name)||{};
+    html+=`<div class="kbox-detail-row"><span>🔁 毎月くり返し</span><button class="kbox-pin-toggle on" data-pin-toggle="${type}_${idx}">解除</button></div>`;
+    html+=`<div class="kbox-detail-row kbox-rec-row"><span>開始</span><span class="kbox-rec-range">`
+      +`<select class="fx-sel" data-rec="startY" data-type="${type}" data-idx="${idx}">${recYearOpts(rec.startY)}</select>`
+      +`<select class="fx-sel" data-rec="startM" data-type="${type}" data-idx="${idx}">${recMonthOpts(rec.startM)}</select>`
+      +`</span></div>`;
+    html+=`<div class="kbox-detail-row kbox-rec-row"><span>終了</span><span class="kbox-rec-range">`
+      +`<select class="fx-sel" data-rec="endY" data-type="${type}" data-idx="${idx}">${recYearOpts(rec.endY)}</select>`
+      +`<select class="fx-sel" data-rec="endM" data-type="${type}" data-idx="${idx}">${recMonthOpts(rec.endM)}</select>`
+      +`</span></div>`;
+    html+=`<div class="kbox-rec-note">終了を空欄にすると継続中。開始・終了の月の範囲だけに反映されます。</div>`;
+  }else{
+    html+=`<div class="kbox-detail-row"><span>毎月くり返し</span><button class="kbox-pin-toggle" data-pin-toggle="${type}_${idx}">🔁 今日から繰り返し</button></div>`;
+  }
   html+=`<div class="kbox-detail-row"><span></span><button class="kbox-del-btn" data-del="${type}_${idx}">この項目を削除</button></div>`;
   detail.innerHTML=html;
   det.appendChild(detail);
@@ -1089,6 +1225,10 @@ function buildItemCard(type,item,idx,fixed){
     if(shareBtn)shareBtn.onclick=e=>{e.preventDefault();e.stopPropagation();openShareSheet(type,idx);};
     const pinBtn=detail.querySelector('[data-pin-toggle]');
     if(pinBtn)pinBtn.onclick=e=>{e.preventDefault();e.stopPropagation();toggleRec(type,item.name,item.amount);renderCards(type);};
+    detail.querySelectorAll('select[data-rec]').forEach(sel=>{
+      sel.onclick=e=>e.stopPropagation();
+      sel.onchange=e=>{e.stopPropagation();applyRecRange(type,item.name,sel.getAttribute('data-rec'),sel.value);};
+    });
     const delBtn=detail.querySelector('[data-del]');
     if(delBtn)delBtn.onclick=e=>{e.preventDefault();e.stopPropagation();deleteItem(type,idx);};
   },0);
@@ -1133,7 +1273,8 @@ function recalc(){
   document.getElementById('v-expense').textContent=fmt(te);
   document.getElementById('v-balance').textContent=fmt(b);
   document.getElementById('sk-title').textContent=`${state.year}年${state.month}月 の収支フロー図`;
-  drawSankey(ti,te,b);saveData();
+  if(state.view==='graph')drawSankey(ti,te,b);
+  saveData();
 }
 
 function renderAll(){
@@ -1167,11 +1308,10 @@ function setViewMode(m){
 }
 
 function setMtab(t){
+  if(t==='graph'){setView('graph');return;}
   mtab=t;
   document.querySelectorAll('.kbox-mtabs button').forEach(b=>b.classList.toggle('on',b.dataset.mtab===t));
   document.querySelectorAll('.kbox-panel').forEach(p=>p.classList.toggle('on',p.dataset.panel===t));
-  // グラフタブ切替時にサンキー再描画
-  if(t==='graph'){const ti=state.income.reduce((s,x)=>s+displayAmount(x),0);const te=state.expense.reduce((s,x)=>s+displayAmount(x),0);drawSankey(ti,te,ti-te);}
 }
 
 // ════════════════════════════════════════
@@ -1318,12 +1458,12 @@ function drawAnnualView(){
   const months=loadAnnualData();
   const yi=months.reduce((s,d)=>s+d.income,0);
   const ye=months.reduce((s,d)=>s+d.expense,0);
-  const withData=months.filter(d=>d.income>0||d.expense>0);
-  const sr=withData.length?withData.filter(d=>d.income>0).reduce((s,d)=>s+d.balance/d.income*100,0)/(withData.filter(d=>d.income>0).length||1):0;
+  const expMonths=months.filter(d=>d.expense>0);
+  const avgExp=expMonths.length?ye/expMonths.length:0;
   document.getElementById('ay-i').textContent=fmt(yi);
   document.getElementById('ay-e').textContent=fmt(ye);
   document.getElementById('ay-b').textContent=fmt(yi-ye);
-  document.getElementById('ay-s').textContent=Math.round(sr)+'%';
+  document.getElementById('ay-avg').textContent=expMonths.length?fmt(avgExp):'–';
 
   drawMonthBar(document.getElementById('ch-bar'),months);
 
@@ -1339,6 +1479,98 @@ function drawAnnualView(){
   document.getElementById('ch-stack-leg').innerHTML=usedCats.map(c=>`<div class="leg"><div class="leg-dot" style="background:${c.color}"></div>${c.name}</div>`).join('');
   drawStackedBar(document.getElementById('ch-stack'),months,usedCats);
   drawMonthTable(months);
+  renderCreditBreakdown();
+}
+
+// ════════════════════════════════════════
+//  クレカ明細（CSV取込 → Gemini分類 → 年間レポート表示）
+// ════════════════════════════════════════
+function creditKey(pid,y,m){return`kb_credit_${pid}_${y}_${String(m).padStart(2,'0')}`;}
+function fsyncCredit(pid,y,m){
+  if(!currentUser)return;
+  const s=localStorage.getItem(creditKey(pid,y,m));
+  if(s)fsPush(uidPath('credit',fsEntryId(pid,y,m)),{tx:JSON.parse(s)});
+}
+function loadCreditYear(){
+  // 表示中の人物・年の12か月分の取引を集約
+  const all=[];
+  for(let m=1;m<=12;m++){
+    const s=localStorage.getItem(creditKey(state.personId,state.year,m));
+    if(s){try{JSON.parse(s).forEach(t=>all.push({...t,_m:m}));}catch(e){}}
+  }
+  return all;
+}
+function ccStatus(msg,kind){
+  const el=document.getElementById('cc-status');if(!el)return;
+  el.textContent=msg||'';el.className='cc-status'+(kind?' '+kind:'');
+}
+async function onCreditCsvSelected(input){
+  const file=input.files&&input.files[0];input.value='';
+  if(!file)return;
+  if(guestMode||!currentUser){ccStatus('クレカ明細の取込にはログインが必要です','err');return;}
+  if(!firebase.functions){ccStatus('機能の読み込みに失敗しました（再読み込みしてください）','err');return;}
+  let text='';
+  try{text=await file.text();}catch(e){ccStatus('ファイルの読み取りに失敗しました','err');return;}
+  if(!text.trim()){ccStatus('CSVが空です','err');return;}
+  if(text.length>300000){ccStatus('CSVが大きすぎます（300KB以下にしてください）','err');return;}
+  const btn=document.getElementById('cc-import-btn');
+  if(btn)btn.disabled=true;
+  ccStatus('AIが明細を解析中…（数秒〜十数秒）');
+  try{
+    const fns=firebase.app().functions('asia-northeast1');
+    const call=fns.httpsCallable('classifyCreditCsv');
+    const cats=EXPENSE_CATS.map(c=>c.name);
+    const res=await call({csv:text,categories:cats});
+    const txs=(res.data&&res.data.transactions)||[];
+    if(!txs.length){ccStatus('取引を抽出できませんでした。別のCSVをお試しください。','err');return;}
+    const saved=storeCreditTransactions(txs);
+    ccStatus(`✓ ${txs.length}件を取り込みました（${saved.months.join('・')}月）`,'ok');
+    renderCreditBreakdown();
+  }catch(err){
+    const msg=(err&&err.message)?err.message:'解析に失敗しました';
+    ccStatus('エラー: '+msg,'err');
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
+function storeCreditTransactions(txs){
+  // 取引日の年月ごとに振り分け。表示中の年のみ保存（他年は無視）。同じ月は今回分で置換。
+  const byMonth={};
+  txs.forEach(t=>{
+    const d=String(t.date||'');const mt=d.match(/^(\d{4})-(\d{2})/);
+    let y=mt?+mt[1]:state.year, m=mt?+mt[2]:state.month;
+    if(y!==state.year)return; // 表示中の年に属する明細だけ保存
+    (byMonth[m]=byMonth[m]||[]).push({date:t.date,name:t.name,amount:Number(t.amount)||0,category:t.category||'その他'});
+  });
+  const months=[];
+  Object.keys(byMonth).map(Number).sort((a,b)=>a-b).forEach(m=>{
+    localStorage.setItem(creditKey(state.personId,state.year,m),JSON.stringify(byMonth[m]));
+    fsyncCredit(state.personId,state.year,m);
+    months.push(m);
+  });
+  return {months};
+}
+function renderCreditBreakdown(){
+  const el=document.getElementById('cc-breakdown');if(!el)return;
+  const all=loadCreditYear();
+  if(!all.length){
+    el.innerHTML=`<div class="cc-empty">${state.year}年のクレカ明細はまだありません。<br>上の「明細CSVを取込」から取り込めます。</div>`;
+    return;
+  }
+  const totals={};let sum=0;
+  all.forEach(t=>{const a=Number(t.amount)||0;if(a<=0)return;const c=t.category||'その他';totals[c]=(totals[c]||0)+a;sum+=a;});
+  const colorOf=name=>{const cat=EXPENSE_CATS.find(c=>c.name===name);return cat?cat.color:'#94a3b8';};
+  const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  const max=rows.length?rows[0][1]:1;
+  let html=`<div class="cc-total"><span class="cc-total-lbl">${state.year}年 クレカ利用合計（${all.length}件）</span><span class="cc-total-val">${fmt(sum)}</span></div>`;
+  html+=rows.map(([name,amt])=>`
+    <div class="cc-cat-row">
+      <span class="cc-cat-dot" style="background:${colorOf(name)}"></span>
+      <span class="cc-cat-name">${esc(name)}</span>
+      <span class="cc-cat-bar-wrap"><span class="cc-cat-bar" style="width:${Math.max(3,amt/max*100)}%;background:${colorOf(name)}"></span></span>
+      <span class="cc-cat-amt">${fmt(amt)}</span>
+    </div>`).join('');
+  el.innerHTML=html;
 }
 
 // ════════════════════════════════════════
@@ -1429,24 +1661,38 @@ function drawCreditLine(el,months){
   el.innerHTML='';
   const W=el.clientWidth||400,H=200;
   const mg={t:15,r:20,b:34,l:60};
-  const maxV=d3.max(months,d=>d.credit)||0;
+  // クレカ明細が入力されている月だけプロット（未入力・将来の月は描画しない）
+  const hasData=d=>d.credit>0;
+  const plot=months.filter(hasData);
+  const maxV=d3.max(plot,d=>d.credit)||0;
   if(!maxV){el.innerHTML=`<div class="no-data">決済サービスの支出データがありません</div>`;return;}
   const svg=d3.select(el).append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).attr('height',H);
   const x=d3.scaleBand().domain(months.map(d=>d.m)).range([mg.l,W-mg.r]).padding(.3);
   const y=d3.scaleLinear().domain([0,maxV]).nice().range([H-mg.b,mg.t]);
-  // area
+  // area（入力済みの月のみ。空き月は .defined で切る）
   svg.append('path').datum(months)
     .attr('fill','rgba(220,38,38,.08)')
-    .attr('d',d3.area().x(d=>x(d.m)+x.bandwidth()/2).y0(H-mg.b).y1(d=>y(d.credit)).curve(d3.curveMonotoneX));
+    .attr('d',d3.area().defined(hasData).x(d=>x(d.m)+x.bandwidth()/2).y0(H-mg.b).y1(d=>y(d.credit)).curve(d3.curveMonotoneX));
   // line
   svg.append('path').datum(months).attr('fill','none')
     .attr('stroke','var(--expense)').attr('stroke-width',2.5)
-    .attr('d',d3.line().x(d=>x(d.m)+x.bandwidth()/2).y(d=>y(d.credit)).curve(d3.curveMonotoneX));
+    .attr('d',d3.line().defined(hasData).x(d=>x(d.m)+x.bandwidth()/2).y(d=>y(d.credit)).curve(d3.curveMonotoneX));
   // dots
-  svg.selectAll('.dc').data(months).join('circle').attr('class','dc')
+  svg.selectAll('.dc').data(plot).join('circle').attr('class','dc')
     .attr('cx',d=>x(d.m)+x.bandwidth()/2).attr('cy',d=>y(d.credit))
-    .attr('r',d=>d.credit>0?4:2).attr('fill',d=>d.credit>0?'var(--expense)':'#ddd').attr('stroke','#fff').attr('stroke-width',1.5)
+    .attr('r',4).attr('fill','var(--expense)').attr('stroke','#fff').attr('stroke-width',1.5)
     .on('mouseover',(ev,d)=>showTT(ev,`${d.m}月 決済合計<br><b>${fmt(d.credit)}</b>`))
+    .on('mousemove',moveTT).on('mouseout',hideTT);
+  // average reference line（入力済みの月で平均・本線とは別色）
+  const avgV=d3.sum(plot,d=>d.credit)/plot.length;
+  const ay=y(avgV);
+  svg.append('line').attr('x1',mg.l).attr('x2',W-mg.r).attr('y1',ay).attr('y2',ay)
+    .attr('stroke','var(--center)').attr('stroke-width',1.5).attr('stroke-dasharray','5 4').attr('opacity',.75);
+  const labelY=ay-5<mg.t+10?ay+15:ay-5;
+  svg.append('text').attr('x',W-mg.r).attr('y',labelY).attr('text-anchor','end')
+    .attr('fill','var(--center)').attr('font-size','11').attr('font-weight','600')
+    .text(`平均 ${fmtShort(avgV)}`)
+    .on('mouseover',ev=>showTT(ev,`月平均（入力済みの月）<br><b>${fmt(avgV)}</b>`))
     .on('mousemove',moveTT).on('mouseout',hideTT);
   svg.append('g').attr('transform',`translate(0,${H-mg.b})`).call(d3.axisBottom(x).tickFormat(d=>`${d}月`)).select('.domain').remove();
   svg.append('g').attr('transform',`translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(d=>fmtShort(d))).select('.domain').remove();
@@ -1489,32 +1735,26 @@ function drawStackedBar(el,months,usedCats){
 // ════════════════════════════════════════
 function drawMonthTable(months){
   const tbl=document.getElementById('month-tbl');
-  const cols=['月','収入','支出','収支','貯蓄率','決済サービス'];
+  const cols=['月','収入','支出','収支'];
   tbl.innerHTML=`<thead><tr>${cols.map(c=>`<th style="text-align:${c==='月'?'center':'right'}">${c}</th>`).join('')}</tr></thead>`;
   const tb=document.createElement('tbody');
   const tfRow=document.createElement('tr');
   let si=0,se=0,sb=0;
   months.forEach(d=>{
     const bal=d.balance;
-    const sr=d.income>0?Math.round(bal/d.income*100):null;
     const has=d.income>0||d.expense>0;
     const tr=document.createElement('tr');
     tr.innerHTML=`<td style="text-align:center;font-weight:700">${d.m}月</td>
       <td style="text-align:right;color:var(--income)">${has?fmt(d.income):'–'}</td>
       <td style="text-align:right;color:var(--expense)">${has?fmt(d.expense):'–'}</td>
-      <td style="text-align:right;color:${bal>=0?'var(--balance)':'var(--expense)'};font-weight:600">${has?fmt(bal):'–'}</td>
-      <td style="text-align:right;color:${sr>=0?'var(--balance)':'var(--expense)'}">${sr!==null?sr+'%':'–'}</td>
-      <td style="text-align:right;color:var(--muted)">${d.credit>0?fmt(d.credit):'–'}</td>`;
+      <td style="text-align:right;color:${bal>=0?'var(--balance)':'var(--expense)'};font-weight:600">${has?fmt(bal):'–'}</td>`;
     tb.appendChild(tr);
     si+=d.income;se+=d.expense;sb+=bal;
   });
-  const avgSr=months.filter(d=>d.income>0).length?Math.round(months.filter(d=>d.income>0).reduce((s,d)=>s+d.balance/d.income*100,0)/months.filter(d=>d.income>0).length):null;
   tfRow.innerHTML=`<td style="text-align:center;font-weight:700">合計</td>
     <td style="text-align:right;color:var(--income);font-weight:700">${fmt(si)}</td>
     <td style="text-align:right;color:var(--expense);font-weight:700">${fmt(se)}</td>
-    <td style="text-align:right;color:${sb>=0?'var(--balance)':'var(--expense)'};font-weight:700">${fmt(sb)}</td>
-    <td style="text-align:right;font-weight:700">${avgSr!==null?avgSr+'%':'–'}</td>
-    <td style="text-align:right;color:var(--muted);font-weight:700">${fmt(months.reduce((s,d)=>s+d.credit,0))}</td>`;
+    <td style="text-align:right;color:${sb>=0?'var(--balance)':'var(--expense)'};font-weight:700">${fmt(sb)}</td>`;
   tfRow.style.cssText='background:#f8fafc;border-top:2px solid var(--text)';
   tb.appendChild(tfRow);
   tbl.appendChild(tb);
@@ -1794,6 +2034,9 @@ async function syncFromFirestore(){
         if(p)localStorage.setItem(`kb_${p[1]}_${p[2]}_${p[3]}`,JSON.stringify(doc.data()));});}catch(e){}
     try{const snap=await db.collection(uidPath('recurring')).get();
       snap.forEach(doc=>localStorage.setItem(recurKey(doc.id),JSON.stringify(doc.data())));}catch(e){}
+    try{const snap=await db.collection(uidPath('credit')).get();
+      snap.forEach(doc=>{const p=doc.id.match(/^(.+)_(\d{4})_(\d{2})$/);const d=doc.data();
+        if(p&&Array.isArray(d.tx))localStorage.setItem(`kb_credit_${p[1]}_${p[2]}_${p[3]}`,JSON.stringify(d.tx));});}catch(e){}
   }else{
     fsyncPersons();
     persons.forEach(p=>{
@@ -2039,6 +2282,81 @@ function saveCatsAndClose(){
   if(state.view==='annual')drawAnnualView();else recalc();
 }
 
+// ════════════════════════════════════════
+//  固定費の管理モーダル
+// ════════════════════════════════════════
+let fixedEditTab='expense', fixedDraft=null;
+function openFixedSettings(){
+  loadRecurring(state.personId);
+  fixedDraft={income:JSON.parse(JSON.stringify(state.ri)),expense:JSON.parse(JSON.stringify(state.re))};
+  switchFixedTab('expense');
+  document.getElementById('fixed-ov').classList.add('open');
+}
+function closeFixedSettings(){
+  document.getElementById('fixed-ov').classList.remove('open');
+  fixedDraft=null;
+}
+function switchFixedTab(tab){
+  fixedEditTab=tab;
+  document.getElementById('fst-income').classList.toggle('on',tab==='income');
+  document.getElementById('fst-expense').classList.toggle('on',tab==='expense');
+  renderFixedList();
+}
+function fxYearSel(idx,key,val){
+  const cy=new Date().getFullYear();
+  let o=`<option value=""${!val?' selected':''}>—</option>`;
+  for(let y=cy-6;y<=cy+2;y++)o+=`<option value="${y}"${val==y?' selected':''}>${y}年</option>`;
+  return `<select class="fx-sel" onchange="fixedSet(${idx},'${key}',this.value)">${o}</select>`;
+}
+function fxMonthSel(idx,key,val){
+  let o=`<option value=""${!val?' selected':''}>—</option>`;
+  for(let m=1;m<=12;m++)o+=`<option value="${m}"${val==m?' selected':''}>${m}月</option>`;
+  return `<select class="fx-sel" onchange="fixedSet(${idx},'${key}',this.value)">${o}</select>`;
+}
+function renderFixedList(){
+  const arr=fixedDraft[fixedEditTab];
+  const el=document.getElementById('fixed-list');
+  if(!arr.length){el.innerHTML=`<div class="fx-empty">${fixedEditTab==='income'?'収入':'支出'}のくり返し項目はまだありません。<br>各項目の「🔁 今日から繰り返し」で登録できます。</div>`;return;}
+  el.innerHTML=arr.map((it,idx)=>`
+    <div class="fx-row">
+      <div class="fx-row-top">
+        <span class="fx-name">${esc(it.name)}</span>
+        <button class="fx-del" onclick="fixedDelete(${idx})">削除</button>
+      </div>
+      <div class="fx-fields">
+        <div class="fx-f"><span class="fx-lbl">金額</span><input class="fx-amt" type="text" inputmode="numeric" value="${it.amount||0}" onchange="fixedSet(${idx},'amount',this.value)"></div>
+        <div class="fx-f"><span class="fx-lbl">開始</span>${fxYearSel(idx,'startY',it.startY)}${fxMonthSel(idx,'startM',it.startM)}</div>
+        <div class="fx-f"><span class="fx-lbl">終了</span>${fxYearSel(idx,'endY',it.endY)}${fxMonthSel(idx,'endM',it.endM)}<span class="fx-hint">空欄=継続中</span></div>
+      </div>
+    </div>`).join('');
+}
+function fixedSet(idx,key,val){
+  const it=fixedDraft[fixedEditTab][idx];
+  if(key==='amount'){it.amount=parseAmt(val);}
+  else{it[key]=val===''?null:parseInt(val,10);}
+}
+function fixedDelete(idx){
+  const it=fixedDraft[fixedEditTab][idx];
+  if(!confirm(`固定費「${it.name}」を解除しますか？\n（今後この項目は毎月コピーされなくなります）`))return;
+  fixedDraft[fixedEditTab].splice(idx,1);
+  renderFixedList();
+}
+function saveFixedAndClose(){
+  // 年・月の片方だけ指定はクリア
+  for(const type of ['income','expense']){
+    fixedDraft[type].forEach(it=>{
+      if(!it.startY||!it.startM){it.startY=null;it.startM=null;}
+      if(!it.endY||!it.endM){it.endY=null;it.endM=null;}
+    });
+  }
+  state.ri=fixedDraft.income;state.re=fixedDraft.expense;
+  saveRecurring();
+  closeFixedSettings();
+  // 現在の月に有効期間フィルタを反映
+  loadData(state.personId,state.year,state.month);
+  renderAll();
+}
+
 // ── 項目入力時のカテゴリプレビュー ──
 function updateCatPreview(){
   const v=document.getElementById('m-inp').value.trim();
@@ -2074,8 +2392,8 @@ window.addEventListener('resize',()=>{
   _lastW=window.innerWidth;
   clearTimeout(_resizeT);
   _resizeT=setTimeout(()=>{
-    if(state.view==='monthly'){const ti=state.income.reduce((s,x)=>s+x.amount,0);const te=state.expense.reduce((s,x)=>s+x.amount,0);drawSankey(ti,te,ti-te);}
-    else drawAnnualView();
+    if(state.view==='graph'){const ti=state.income.reduce((s,x)=>s+displayAmount(x),0);const te=state.expense.reduce((s,x)=>s+displayAmount(x),0);drawSankey(ti,te,ti-te);}
+    else if(state.view==='annual')drawAnnualView();
   },180);
 });
 
