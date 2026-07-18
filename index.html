@@ -996,18 +996,19 @@ function recMonthOpts(val){
   for(let m=1;m<=12;m++)o+=`<option value="${m}"${val==m?' selected':''}>${m}月</option>`;
   return o;
 }
-// カード内で開始/終了を変更 → 保存し、有効期間フィルタを今月に反映
+// カード内で開始/終了を変更 → その場で保存（選択は保持し、カードは畳まない）
 function applyRecRange(type,name,key,val){
   const rec=recItem(type,name);
   if(!rec)return;
+  // 年だけ／月だけの途中状態も保持する（両方そろって初めて範囲が効く。isRecActive参照）
   rec[key]=val===''?null:parseInt(val,10);
-  // 年・月の片方だけの指定はクリア（保存時の整合と同じ）
-  if((key==='startY'||key==='startM')&&(!rec.startY||!rec.startM)){rec.startY=null;rec.startM=null;}
-  if((key==='endY'||key==='endM')&&(!rec.endY||!rec.endM)){rec.endY=null;rec.endM=null;}
   saveRecurring();
-  saveData();
-  loadData(state.personId,state.year,state.month);
-  renderAll();
+  // 期間が完成して当月が範囲外になった時だけ、当月表示から外す（それ以外は再描画せず選択を維持）
+  if(!isRecActive(rec,state.year,state.month)){
+    saveData();
+    loadData(state.personId,state.year,state.month);
+    renderAll();
+  }
 }
 // 年月を比較用の通し番号に
 function ymIndex(y,m){return y*12+(m-1);}
