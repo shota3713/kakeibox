@@ -1152,6 +1152,8 @@ function renderCards(type){
 function buildItemCard(type,item,idx,fixed){
   const sh=item.share||{type:'self'};
   const hasShare=sh.type!=='self';
+  // 繰り返しテンプレートへの安定参照（名前キーの紐付けが切れないよう保持）
+  const recRef=fixed?recItem(type,item.name):null;
   const total=item.amount||0;
   const impact=displayAmount(item);
   const expandable=hasShare||true; // 編集UIを詳細に格納するので常に展開可
@@ -1203,6 +1205,8 @@ function buildItemCard(type,item,idx,fixed){
       nameInp.oninput=e=>{
         const arr=state[type==='income'?'income':'expense'];
         arr[idx].name=e.target.value;
+        // 繰り返し項目なら、テンプレート側の名前も同期（紐付けが切れて重複・タグ消失するのを防ぐ）
+        if(recRef){recRef.name=e.target.value;saveRecurring();}
         // サマリの名前テキストを即時更新
         const nameEl=det.querySelector('.kbox-name-text');
         if(nameEl)nameEl.textContent=e.target.value||'(無題)';
