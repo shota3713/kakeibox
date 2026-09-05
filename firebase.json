@@ -2,5 +2,40 @@
   "functions": {
     "source": "functions",
     "runtime": "nodejs20"
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/.git/**",
+      "**/.firebase/**",
+      "**/.claude/**",
+      "firestore.rules",
+      "*.rules",
+      "**/node_modules/**",
+      "functions/**",
+      "*.bak",
+      "index.html.bak",
+      "mock*.html",
+      "mock-preview.png",
+      "landing.html",
+      "README.md",
+      ".claude/**"
+    ],
+    "rewrites": [
+      { "source": "**", "destination": "/index.html" }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      }
+    ]
   }
 }

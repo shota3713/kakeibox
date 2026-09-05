@@ -417,6 +417,10 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
   background:#fff;color:var(--muted);
 }
 .kbox-pin-toggle.on{background:var(--pin-bg);color:var(--pin-fg);border-color:var(--pin-bg)}
+/* 金額 固定/変動 の切替（選択中＝現在の設定を強調表示） */
+.kbox-lockseg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;background:#fff}
+.kbox-lockseg button{border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:11px;font-weight:800;padding:5px 10px;cursor:pointer;white-space:nowrap}
+.kbox-lockseg button.on{background:var(--pin-bg);color:var(--pin-fg)}
 /* カード内 くり返し（開始/終了）インライン設定 */
 .kbox-rec-row .kbox-rec-range{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;
@@ -757,6 +761,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
       <button class="catset-tab on" id="fst-expense" onclick="switchFixedTab('expense')">支出の固定費</button>
     </div>
     <div id="fixed-list"></div>
+    <button class="kbox-del-btn" style="width:100%;margin-top:12px;padding:8px" onclick="resetAllRecurring()">⚠ 繰り返しルールを全リセット</button>
     <div style="display:flex;gap:8px;margin-top:12px">
       <button class="m-close" style="margin:0;flex:1;font-size:12px" onclick="closeFixedSettings()">キャンセル</button>
       <button class="m-ok"    style="flex:2"                          onclick="saveFixedAndClose()">保存して閉じる</button>
@@ -940,7 +945,7 @@ function dKey(pid,y,m){return `kb_${pid}_${y}_${String(m).padStart(2,'0')}`}
 function saveData(){
   if(guestMode||!state.personId)return;
   localStorage.setItem(dKey(state.personId,state.year,state.month),
-    JSON.stringify({income:state.income,expense:state.expense,mode:state.mode}));
+    JSON.stringify({income:state.income,expense:state.expense,mode:state.mode,updatedAt:Date.now()}));
   if(currentUser)fsyncData(state.personId,state.year,state.month);
 }
 // その月の表示配列を作る。繰り返しは項目ごとに金額固定/変動を選べる
@@ -956,6 +961,7 @@ function mergeRecurring(monthItems,type,y,m){
     if(r&&!isRecActive(r,y,m))return; // 期間外になった繰り返しは落とす
     const act=recByName.get(it.name);
     if(!act){result.push(it);return;} // 非繰り返しの手入力はそのまま
+    if(used.has(it.name))return; // 同名の繰り返しが月内に重複していたら1つに統合
     used.add(it.name);
     if(act.lockAmount!==false){
       // 固定：テンプレ値で上書き
@@ -1002,7 +1008,7 @@ function loadData(pid,y,m){
 function recurKey(pid){return`kb_recur_${pid}`}
 function saveRecurring(){
   if(guestMode||!state.personId)return;
-  localStorage.setItem(recurKey(state.personId),JSON.stringify({income:state.ri,expense:state.re}));
+  localStorage.setItem(recurKey(state.personId),JSON.stringify({income:state.ri,expense:state.re,updatedAt:Date.now()}));
   if(currentUser)fsyncRecurring(state.personId);
 }
 function loadRecurring(pid){
@@ -1012,11 +1018,11 @@ function loadRecurring(pid){
 }
 function isRec(type,name){return(type==='income'?state.ri:state.re).some(x=>x.name===name);}
 function recItem(type,name){return(type==='income'?state.ri:state.re).find(x=>x.name===name);}
-// 項目の金額・分担を繰り返しテンプレへ同期（テンプレ優先＝全月に波及）
+// 項目の分担をテンプレへ同期（分担は常に全月へ波及）。金額は「固定」の項目のみ波及
 function syncRecFromItem(type,item){
   const r=recItem(type,item.name);
   if(!r)return;
-  r.amount=item.amount;
+  if(r.lockAmount!==false)r.amount=item.amount;
   r.share=item.share?{...item.share}:{type:'self'};
   saveRecurring();
 }
@@ -1220,7 +1226,10 @@ function buildItemCard(type,item,idx,fixed){
     const rec=recItem(type,item.name)||{};
     const locked=rec.lockAmount!==false;
     html+=`<div class="kbox-detail-row"><span>🔁 毎月くり返し</span><button class="kbox-pin-toggle on" data-pin-toggle="${type}_${idx}">解除</button></div>`;
-    html+=`<div class="kbox-detail-row"><span>金額</span><button class="kbox-pin-toggle${locked?' on':''}" data-lock-toggle="${type}_${idx}">${locked?'🔒 毎月同じ（固定）':'✏️ 毎月入力（変動）'}</button></div>`;
+    html+=`<div class="kbox-detail-row"><span>金額のルール</span><span class="kbox-lockseg">`
+      +`<button data-lock-set="fixed"${locked?' class="on"':''}>🔒 毎月同じ</button>`
+      +`<button data-lock-set="variable"${locked?'':' class="on"'}>✏️ 毎月入力</button>`
+      +`</span></div>`;
     html+=`<div class="kbox-detail-row kbox-rec-row"><span>開始</span><span class="kbox-rec-range">`
       +`<select class="fx-sel" data-rec="startY" data-type="${type}" data-idx="${idx}">${recYearOpts(rec.startY)}</select>`
       +`<select class="fx-sel" data-rec="startM" data-type="${type}" data-idx="${idx}">${recMonthOpts(rec.startM)}</select>`
@@ -1229,7 +1238,7 @@ function buildItemCard(type,item,idx,fixed){
       +`<select class="fx-sel" data-rec="endY" data-type="${type}" data-idx="${idx}">${recYearOpts(rec.endY)}</select>`
       +`<select class="fx-sel" data-rec="endM" data-type="${type}" data-idx="${idx}">${recMonthOpts(rec.endM)}</select>`
       +`</span></div>`;
-    html+=`<div class="kbox-rec-note">金額「固定」＝毎月同じ額（どの月で変えても全月に反映）。「変動」＝毎月入力（その月だけ変わる）。終了を空欄にすると継続中。</div>`;
+    html+=`<div class="kbox-rec-note">「毎月同じ」＝どの月で金額を変えても全月に反映。「毎月入力」＝その月だけ変わる（他の月はそのまま）。終了を空欄にすると継続中。</div>`;
   }else{
     html+=`<div class="kbox-detail-row"><span>毎月くり返し</span><button class="kbox-pin-toggle" data-pin-toggle="${type}_${idx}">🔁 今日から繰り返し</button></div>`;
   }
@@ -1259,8 +1268,8 @@ function buildItemCard(type,item,idx,fixed){
       amtInp.onblur=()=>{
         const arr=state[type==='income'?'income':'expense'];
         arr[idx].amount=parseAmt(amtInp.value);
-        // 繰り返し項目なら金額もテンプレへ同期（毎月同じ額＝全月に波及）
-        if(recRef){recRef.amount=arr[idx].amount;saveRecurring();}
+        // 金額「固定」の繰り返しのみテンプレへ同期（全月に波及）。「変動」はその月だけ
+        if(recRef&&recRef.lockAmount!==false){recRef.amount=arr[idx].amount;saveRecurring();}
         amtInp.value=arr[idx].amount?fmt(arr[idx].amount):'';
         renderCards(type);recalc();
       };
@@ -1270,10 +1279,17 @@ function buildItemCard(type,item,idx,fixed){
     if(shareBtn)shareBtn.onclick=e=>{e.preventDefault();e.stopPropagation();openShareSheet(type,idx);};
     const pinBtn=detail.querySelector('[data-pin-toggle]');
     if(pinBtn)pinBtn.onclick=e=>{e.preventDefault();e.stopPropagation();toggleRec(type,item.name,item.amount);renderCards(type);};
-    const lockBtn=detail.querySelector('[data-lock-toggle]');
-    if(lockBtn)lockBtn.onclick=e=>{e.preventDefault();e.stopPropagation();
-      if(recRef){recRef.lockAmount=(recRef.lockAmount===false);saveRecurring();saveData();loadData(state.personId,state.year,state.month);renderAll();}
-    };
+    detail.querySelectorAll('[data-lock-set]').forEach(b=>{
+      b.onclick=e=>{e.preventDefault();e.stopPropagation();
+        if(!recRef)return;
+        const toFixed=b.getAttribute('data-lock-set')==='fixed';
+        if((recRef.lockAmount!==false)===toFixed)return; // 既に選択中なら何もしない
+        recRef.lockAmount=toFixed;
+        // 「毎月入力」→「毎月同じ」へ切替えた時は、今見ている月の金額を新しい固定額として採用
+        if(toFixed){const cur=state[type==='income'?'income':'expense'][idx];if(cur)recRef.amount=cur.amount;}
+        saveRecurring();saveData();loadData(state.personId,state.year,state.month);renderAll();
+      };
+    });
     detail.querySelectorAll('select[data-rec]').forEach(sel=>{
       sel.onclick=e=>e.stopPropagation();
       sel.onchange=e=>{e.stopPropagation();applyRecRange(type,item.name,sel.getAttribute('data-rec'),sel.value);};
@@ -1941,7 +1957,25 @@ function uidPath(...segs){
 }
 function profilePath(...segs){return['users',currentUser.uid,...segs].join('/');}
 function fsEntryId(pid,y,m){return`${pid}_${y}_${String(m).padStart(2,'0')}`;}
-async function fsPush(path,data){try{await db.doc(path).set(data,{merge:true});}catch(e){console.warn('fs write',e);}}
+let _syncErrShown=false;
+function notifySyncError(e){
+  console.warn('fs write',e);
+  if(_syncErrShown)return;_syncErrShown=true;
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#991b1b;color:#fff;font-size:12px;line-height:1.5;padding:10px 16px;border-radius:10px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.25);max-width:90vw';
+  el.textContent='クラウド保存に失敗しました（この端末には保存済みです）: '+((e&&(e.code||e.message))||'不明なエラー');
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),8000);
+}
+async function fsPush(path,data){try{await db.doc(path).set(data,{merge:true});}catch(e){notifySyncError(e);}}
+// クラウド文書をローカルへ取り込む。ローカルの方が新しければ残し、逆にクラウドへ送り返して直す
+function adoptRemote(key,remote,path){
+  let local=null;
+  try{const s=localStorage.getItem(key);if(s)local=JSON.parse(s);}catch(e){}
+  const lt=(local&&local.updatedAt)||0, rt=(remote&&remote.updatedAt)||0;
+  if(!local||rt>=lt)localStorage.setItem(key,JSON.stringify(remote));
+  else fsPush(path,local);
+}
 async function fsPull(path){try{const s=await db.doc(path).get();return s.exists?s.data():null;}catch(e){return null;}}
 function fsyncPersons(){if(currentUser)fsPush(uidPath('meta','persons'),{persons});}
 function fsyncData(pid,y,m){const s=localStorage.getItem(dKey(pid,y,m));if(s)fsPush(uidPath('entries',fsEntryId(pid,y,m)),JSON.parse(s));}
@@ -2082,9 +2116,9 @@ async function syncFromFirestore(){
     localStorage.setItem('kb_persons',JSON.stringify(persons));
     try{const snap=await db.collection(uidPath('entries')).get();
       snap.forEach(doc=>{const p=doc.id.match(/^(.+)_(\d{4})_(\d{2})$/);
-        if(p)localStorage.setItem(`kb_${p[1]}_${p[2]}_${p[3]}`,JSON.stringify(doc.data()));});}catch(e){}
+        if(p)adoptRemote(`kb_${p[1]}_${p[2]}_${p[3]}`,doc.data(),uidPath('entries',doc.id));});}catch(e){}
     try{const snap=await db.collection(uidPath('recurring')).get();
-      snap.forEach(doc=>localStorage.setItem(recurKey(doc.id),JSON.stringify(doc.data())));}catch(e){}
+      snap.forEach(doc=>adoptRemote(recurKey(doc.id),doc.data(),uidPath('recurring',doc.id)));}catch(e){}
     try{const snap=await db.collection(uidPath('credit')).get();
       snap.forEach(doc=>{const p=doc.id.match(/^(.+)_(\d{4})_(\d{2})$/);const d=doc.data();
         if(p&&Array.isArray(d.tx))localStorage.setItem(`kb_credit_${p[1]}_${p[2]}_${p[3]}`,JSON.stringify(d.tx));});}catch(e){}
@@ -2391,6 +2425,19 @@ function fixedDelete(idx){
   if(!confirm(`固定費「${it.name}」を解除しますか？\n（今後この項目は毎月コピーされなくなります）`))return;
   fixedDraft[fixedEditTab].splice(idx,1);
   renderFixedList();
+}
+// 全人物の繰り返しルール（固定/変動設定・開始終了を含む）を削除。各月の入力済みデータは残す
+function resetAllRecurring(){
+  if(!confirm('すべての繰り返しルール（金額の固定/変動・開始/終了の設定を含む）を削除します。\n各月にすでに入力されている金額はそのまま残ります。\n\nよろしいですか？'))return;
+  persons.forEach(p=>{
+    localStorage.setItem(recurKey(p.id),JSON.stringify({income:[],expense:[],updatedAt:Date.now()}));
+    if(currentUser)fsyncRecurring(p.id);
+  });
+  state.ri=[];state.re=[];
+  fixedDraft={income:[],expense:[]};
+  renderFixedList();
+  loadData(state.personId,state.year,state.month);
+  renderAll();
 }
 function saveFixedAndClose(){
   // 年・月の片方だけ指定はクリア

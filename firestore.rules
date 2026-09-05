@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// kakeibox Firestore セキュリティルール
+//
+// データモデル:
+//   users/{uid}/...      … 個人データ（本人のみ読み書き可）
+//   groups/{gid}         … グループ文書（members[] を持つ）
+//   groups/{gid}/...     … グループ共有の家計データ（メンバーのみ）
+//
+// 招待は ?join={gid} リンク方式。gid はランダムな長いIDで
+// 実質的なケイパビリティ（リンクを知る＝招待された人）として扱う。
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // ── 個人データ：本人のみ ──────────────────────────
+    match /users/{uid}/{doc=**} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ── グループ本体 ────────────────────────────────
+    match /groups/{gid} {
+
+      function isMember() {
+        return signedIn() && request.auth.uid in resource.data.members;
+      }
+
+      // 読み取り：ログイン済み（gidを知っている＝招待前提）
+      allow read: if signedIn();
+
+      // 作成：作成者本人が owner、members は自分1人のみ
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.members == [request.auth.uid];
+
+      // 更新：既存メンバー、または「自分を末尾に追加する参加」だけ許可
+      allow update: if isMember()
+        || (signedIn()
+            && !(request.auth.uid in resource.data.members)
+            && request.resource.data.members == resource.data.members.concat([request.auth.uid]));
+
+      // 削除：オーナーのみ
+      allow delete: if signedIn() && request.auth.uid == resource.data.ownerUid;
+
+      // ── グループ配下の家計データ：メンバーのみ ──────────
+      match /{doc=**} {
+        allow read, write: if signedIn()
+          && request.auth.uid in
+             get(/databases/$(database)/documents/groups/$(gid)).data.members;
+      }
+    }
+
+    // それ以外は全拒否（明示）
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
