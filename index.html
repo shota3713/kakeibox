@@ -421,6 +421,20 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
 .kbox-lockseg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;background:#fff}
 .kbox-lockseg button{border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:11px;font-weight:800;padding:5px 10px;cursor:pointer;white-space:nowrap}
 .kbox-lockseg button.on{background:var(--pin-bg);color:var(--pin-fg)}
+/* データ抽出モーダル */
+.xq-range{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-bottom:10px;flex-wrap:wrap}
+.xq-selhead{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);margin:4px 0 6px}
+.xq-mini{border:1px solid var(--border);background:#fff;border-radius:999px;font-size:10px;font-weight:700;color:var(--muted);padding:3px 8px;cursor:pointer;font-family:inherit;margin-left:6px}
+#xq-items{display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow-y:auto;margin-bottom:10px}
+.xq-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;background:#fff;user-select:none;font-family:inherit}
+.xq-chip.on{background:var(--pin-bg);color:var(--pin-fg);border-color:var(--pin-bg)}
+.xq-chip .t{font-size:9px;opacity:.7}
+#xq-result{overflow-x:auto}
+.xq-table{width:100%;border-collapse:collapse;font-size:11px}
+.xq-table th,.xq-table td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+.xq-table th:first-child,.xq-table td:first-child{text-align:left}
+.xq-table thead th{color:var(--muted);font-size:10px;font-weight:700}
+.xq-table .xq-total td{font-weight:800;border-top:2px solid var(--border);border-bottom:none}
 /* カード内 くり返し（開始/終了）インライン設定 */
 .kbox-rec-row .kbox-rec-range{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;
@@ -549,6 +563,7 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
     <button class="btn-np" id="btn-np">＋ 人物</button>
     <button class="nb" id="btn-group" onclick="openGroupModal()" title="グループ" style="display:none">👥</button>
     <button class="nb" id="btn-fixed" onclick="openFixedSettings()" title="固定費の管理">📌</button>
+    <button class="nb" id="btn-extract" onclick="openExtract()" title="データ抽出（合計・平均）">🔍</button>
     <button class="nb" id="btn-cat-settings" onclick="openCatSettings()" title="カテゴリ設定">⚙</button>
     <a href="./landing.html" class="nb auth-btn" title="kakeiboxについて" style="text-decoration:none">?</a>
     <div id="auth-area"></div>
@@ -766,6 +781,28 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
       <button class="m-close" style="margin:0;flex:1;font-size:12px" onclick="closeFixedSettings()">キャンセル</button>
       <button class="m-ok"    style="flex:2"                          onclick="saveFixedAndClose()">保存して閉じる</button>
     </div>
+  </div>
+</div>
+<!-- ── データ抽出モーダル ── -->
+<div class="ov" id="extract-ov" onclick="if(event.target===this)closeExtract()">
+  <div class="mbox catset-box">
+    <div class="catset-hd">
+      <div class="m-title" style="margin:0">🔍 データ抽出</div>
+      <button class="btn-x" style="font-size:18px;color:#94a3b8;padding:2px 6px" onclick="closeExtract()">✕</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin:0 0 8px;line-height:1.6">期間と項目を選ぶと、合計・月平均・最大・最小を集計します（表示中の人物・表示モードの金額が対象）。</p>
+    <div class="xq-range">
+      <span>期間</span>
+      <select class="fx-sel" id="xq-y1" onchange="xqOnPeriodChange()"></select><select class="fx-sel" id="xq-m1" onchange="xqOnPeriodChange()"></select>
+      <span>〜</span>
+      <select class="fx-sel" id="xq-y2" onchange="xqOnPeriodChange()"></select><select class="fx-sel" id="xq-m2" onchange="xqOnPeriodChange()"></select>
+    </div>
+    <div class="xq-selhead">
+      <span>項目を選択（タップで絞り込み）</span>
+      <span><button class="xq-mini" onclick="extractSelectAll(true)">全選択</button><button class="xq-mini" onclick="extractSelectAll(false)">解除</button></span>
+    </div>
+    <div id="xq-items"></div>
+    <div id="xq-result"></div>
   </div>
 </div>
 <div id="tt"></div>
@@ -1516,6 +1553,94 @@ function loadAnnualData(){
     (d.expense||[]).forEach(x=>{const cn=categorize(x.name,EXPENSE_CATS).name;cats[cn]=(cats[cn]||0)+displayAmount(x);});
     return{m,income:inc,expense:exp,balance:inc-exp,credit,cats,raw:d};
   });
+}
+
+// ════════════════════════════════════════
+//  データ抽出（選んだ項目×期間の合計・平均）
+// ════════════════════════════════════════
+let xqChecked=null; // Set("type|name")。nullは「期間内の全項目を選択」扱い
+function xqYearOpts(sel){
+  const cy=new Date().getFullYear();let o='';
+  for(let y=cy-6;y<=cy+2;y++)o+=`<option value="${y}"${y===sel?' selected':''}>${y}年</option>`;
+  return o;
+}
+function xqMonthOpts(sel){
+  let o='';for(let m=1;m<=12;m++)o+=`<option value="${m}"${m===sel?' selected':''}>${m}月</option>`;
+  return o;
+}
+// 期間内の全項目行を集める: {ym,type,name,amount}
+function xqRows(){
+  let a=ymIndex(+document.getElementById('xq-y1').value,+document.getElementById('xq-m1').value);
+  let b=ymIndex(+document.getElementById('xq-y2').value,+document.getElementById('xq-m2').value);
+  if(a>b){const t=a;a=b;b=t;}
+  const rows=[];
+  for(let t=a;t<=b;t++){
+    const y=Math.floor(t/12),m=(t%12)+1;
+    const s=localStorage.getItem(dKey(state.personId,y,m));
+    if(!s)continue;
+    let d;try{d=JSON.parse(s);}catch(e){continue;}
+    ['expense','income'].forEach(type=>(d[type]||[]).forEach(it=>{
+      if(!it||!it.name)return;
+      rows.push({ym:`${y}/${m}`,type,name:it.name,amount:displayAmount(it)});
+    }));
+  }
+  return rows;
+}
+function openExtract(){
+  saveData();
+  document.getElementById('xq-y1').innerHTML=xqYearOpts(state.year);
+  document.getElementById('xq-m1').innerHTML=xqMonthOpts(1);
+  document.getElementById('xq-y2').innerHTML=xqYearOpts(state.year);
+  document.getElementById('xq-m2').innerHTML=xqMonthOpts(12);
+  xqChecked=null;
+  renderExtract();
+  document.getElementById('extract-ov').classList.add('open');
+}
+function closeExtract(){document.getElementById('extract-ov').classList.remove('open');}
+function xqOnPeriodChange(){xqChecked=null;renderExtract();}
+function extractSelectAll(on){
+  xqChecked=on?new Set(xqRows().map(r=>r.type+'|'+r.name)):new Set();
+  renderExtract();
+}
+function xqToggle(key){
+  if(xqChecked.has(key))xqChecked.delete(key);else xqChecked.add(key);
+  renderExtract();
+}
+function renderExtract(){
+  const rows=xqRows();
+  const keys=[...new Set(rows.map(r=>r.type+'|'+r.name))];
+  if(xqChecked===null)xqChecked=new Set(keys);
+  const box=document.getElementById('xq-items');
+  const res=document.getElementById('xq-result');
+  if(!keys.length){
+    box.innerHTML='<div style="font-size:11px;color:var(--muted)">この期間にデータがありません</div>';
+    res.innerHTML='';return;
+  }
+  box.innerHTML=keys.map(k=>{
+    const i=k.indexOf('|'),type=k.slice(0,i),name=k.slice(i+1);
+    return `<button class="xq-chip${xqChecked.has(k)?' on':''}" data-key="${esc(k)}"><span class="t">${type==='income'?'収':'支'}</span>${esc(name)}</button>`;
+  }).join('');
+  box.querySelectorAll('.xq-chip').forEach(b=>b.onclick=()=>xqToggle(b.getAttribute('data-key')));
+  const sel=rows.filter(r=>xqChecked.has(r.type+'|'+r.name));
+  if(!sel.length){res.innerHTML='<div style="font-size:11px;color:var(--muted);padding:8px 0">項目を選択してください</div>';return;}
+  // 項目ごとに集計
+  const by=new Map();
+  sel.forEach(r=>{const k=r.type+'|'+r.name;if(!by.has(k))by.set(k,[]);by.get(k).push(r.amount);});
+  let html='<table class="xq-table"><thead><tr><th>項目</th><th>合計</th><th>月平均</th><th>月数</th><th>最大</th><th>最小</th></tr></thead><tbody>';
+  const totals={income:0,expense:0};
+  by.forEach((amts,k)=>{
+    const i=k.indexOf('|'),type=k.slice(0,i),name=k.slice(i+1);
+    const total=amts.reduce((s,x)=>s+x,0);
+    totals[type]+=total;
+    html+=`<tr><td>${type==='income'?'💰':'💸'} ${esc(name)}</td><td>${fmt(total)}</td><td>${fmt(total/amts.length)}</td><td>${amts.length}</td><td>${fmt(Math.max(...amts))}</td><td>${fmt(Math.min(...amts))}</td></tr>`;
+  });
+  html+='</tbody><tfoot>';
+  const selMonths=new Set(sel.map(r=>r.ym)).size;
+  if(totals.expense)html+=`<tr class="xq-total"><td>💸 支出 合計</td><td>${fmt(totals.expense)}</td><td>${fmt(totals.expense/selMonths)}</td><td>${selMonths}</td><td></td><td></td></tr>`;
+  if(totals.income)html+=`<tr class="xq-total"><td>💰 収入 合計</td><td>${fmt(totals.income)}</td><td>${fmt(totals.income/selMonths)}</td><td>${selMonths}</td><td></td><td></td></tr>`;
+  if(totals.income&&totals.expense)html+=`<tr class="xq-total"><td>差引（収入−支出）</td><td>${fmt(totals.income-totals.expense)}</td><td></td><td></td><td></td><td></td></tr>`;
+  html+='</tfoot></table>';
+  res.innerHTML=html;
 }
 
 // ════════════════════════════════════════
