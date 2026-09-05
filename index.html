@@ -790,7 +790,11 @@ table.bt td input:focus{background:#f0fdfa;border-radius:2px}
       <div class="m-title" style="margin:0">🔍 データ抽出</div>
       <button class="btn-x" style="font-size:18px;color:#94a3b8;padding:2px 6px" onclick="closeExtract()">✕</button>
     </div>
-    <p style="font-size:11px;color:var(--muted);margin:0 0 8px;line-height:1.6">期間と項目を選ぶと、合計・月平均・最大・最小を集計します（表示中の人物・表示モードの金額が対象）。</p>
+    <p style="font-size:11px;color:var(--muted);margin:0 0 8px;line-height:1.6">期間と項目を選ぶと、合計・月平均・最大・最小に加え、分担（折半など）を適用したメンバーごとの実質負担額を集計します。</p>
+    <div class="xq-range">
+      <span>対象</span>
+      <select class="fx-sel" id="xq-person" onchange="xqOnPeriodChange()"></select>
+    </div>
     <div class="xq-range">
       <span>期間</span>
       <select class="fx-sel" id="xq-y1" onchange="xqOnPeriodChange()"></select><select class="fx-sel" id="xq-m1" onchange="xqOnPeriodChange()"></select>
@@ -1568,26 +1572,34 @@ function xqMonthOpts(sel){
   let o='';for(let m=1;m<=12;m++)o+=`<option value="${m}"${m===sel?' selected':''}>${m}月</option>`;
   return o;
 }
-// 期間内の全項目行を集める: {ym,type,name,amount}
+// 期間内の全項目行を集める: {ym,type,name,total,self,partner}
+// total=総額 / self=メンバー1(persons[0])の負担 / partner=メンバー2(persons[1])の負担
 function xqRows(){
   let a=ymIndex(+document.getElementById('xq-y1').value,+document.getElementById('xq-m1').value);
   let b=ymIndex(+document.getElementById('xq-y2').value,+document.getElementById('xq-m2').value);
   if(a>b){const t=a;a=b;b=t;}
+  const psel=document.getElementById('xq-person').value;
+  const pids=psel==='all'?persons.map(p=>p.id):[psel];
   const rows=[];
-  for(let t=a;t<=b;t++){
-    const y=Math.floor(t/12),m=(t%12)+1;
-    const s=localStorage.getItem(dKey(state.personId,y,m));
-    if(!s)continue;
-    let d;try{d=JSON.parse(s);}catch(e){continue;}
-    ['expense','income'].forEach(type=>(d[type]||[]).forEach(it=>{
-      if(!it||!it.name)return;
-      rows.push({ym:`${y}/${m}`,type,name:it.name,amount:displayAmount(it)});
-    }));
-  }
+  pids.forEach(pid=>{
+    for(let t=a;t<=b;t++){
+      const y=Math.floor(t/12),m=(t%12)+1;
+      const s=localStorage.getItem(dKey(pid,y,m));
+      if(!s)continue;
+      let d;try{d=JSON.parse(s);}catch(e){continue;}
+      ['expense','income'].forEach(type=>(d[type]||[]).forEach(it=>{
+        if(!it||!it.name)return;
+        rows.push({ym:`${y}/${m}`,type,name:it.name,total:it.amount||0,self:selfBurden(it),partner:partnerBurden(it)});
+      }));
+    }
+  });
   return rows;
 }
 function openExtract(){
   saveData();
+  const ps=document.getElementById('xq-person');
+  ps.innerHTML=(persons.length>=2?`<option value="all">全員（全帳簿まとめて）</option>`:'')
+    +persons.map(p=>`<option value="${esc(p.id)}"${p.id===state.personId?' selected':''}>${esc(p.name)}の帳簿</option>`).join('');
   document.getElementById('xq-y1').innerHTML=xqYearOpts(state.year);
   document.getElementById('xq-m1').innerHTML=xqMonthOpts(1);
   document.getElementById('xq-y2').innerHTML=xqYearOpts(state.year);
@@ -1623,23 +1635,35 @@ function renderExtract(){
   box.querySelectorAll('.xq-chip').forEach(b=>b.onclick=()=>xqToggle(b.getAttribute('data-key')));
   const sel=rows.filter(r=>xqChecked.has(r.type+'|'+r.name));
   if(!sel.length){res.innerHTML='<div style="font-size:11px;color:var(--muted);padding:8px 0">項目を選択してください</div>';return;}
-  // 項目ごとに集計
+  // 項目ごとに集計（総額＋メンバー別負担）
+  const two=persons.length>=2;
+  const n1=esc(persons[0]?.name||'自分'), n2=esc(persons[1]?.name||'相手');
   const by=new Map();
-  sel.forEach(r=>{const k=r.type+'|'+r.name;if(!by.has(k))by.set(k,[]);by.get(k).push(r.amount);});
-  let html='<table class="xq-table"><thead><tr><th>項目</th><th>合計</th><th>月平均</th><th>月数</th><th>最大</th><th>最小</th></tr></thead><tbody>';
-  const totals={income:0,expense:0};
-  by.forEach((amts,k)=>{
+  sel.forEach(r=>{const k=r.type+'|'+r.name;if(!by.has(k))by.set(k,[]);by.get(k).push(r);});
+  const memberTh=two?`<th>${n1}分</th><th>${n2}分</th>`:'';
+  let html=`<table class="xq-table"><thead><tr><th>項目</th><th>総額</th>${memberTh}<th>月平均</th><th>月数</th><th>最大</th><th>最小</th></tr></thead><tbody>`;
+  const totals={income:{t:0,s:0,p:0},expense:{t:0,s:0,p:0}};
+  by.forEach((items,k)=>{
     const i=k.indexOf('|'),type=k.slice(0,i),name=k.slice(i+1);
-    const total=amts.reduce((s,x)=>s+x,0);
-    totals[type]+=total;
-    html+=`<tr><td>${type==='income'?'💰':'💸'} ${esc(name)}</td><td>${fmt(total)}</td><td>${fmt(total/amts.length)}</td><td>${amts.length}</td><td>${fmt(Math.max(...amts))}</td><td>${fmt(Math.min(...amts))}</td></tr>`;
+    const t=items.reduce((s,x)=>s+x.total,0);
+    const sb=items.reduce((s,x)=>s+x.self,0);
+    const pb=items.reduce((s,x)=>s+x.partner,0);
+    totals[type].t+=t;totals[type].s+=sb;totals[type].p+=pb;
+    const amts=items.map(x=>x.total);
+    const memberTd=two?`<td>${fmt(sb)}</td><td>${fmt(pb)}</td>`:'';
+    html+=`<tr><td>${type==='income'?'💰':'💸'} ${esc(name)}</td><td>${fmt(t)}</td>${memberTd}<td>${fmt(t/items.length)}</td><td>${items.length}</td><td>${fmt(Math.max(...amts))}</td><td>${fmt(Math.min(...amts))}</td></tr>`;
   });
   html+='</tbody><tfoot>';
   const selMonths=new Set(sel.map(r=>r.ym)).size;
-  if(totals.expense)html+=`<tr class="xq-total"><td>💸 支出 合計</td><td>${fmt(totals.expense)}</td><td>${fmt(totals.expense/selMonths)}</td><td>${selMonths}</td><td></td><td></td></tr>`;
-  if(totals.income)html+=`<tr class="xq-total"><td>💰 収入 合計</td><td>${fmt(totals.income)}</td><td>${fmt(totals.income/selMonths)}</td><td>${selMonths}</td><td></td><td></td></tr>`;
-  if(totals.income&&totals.expense)html+=`<tr class="xq-total"><td>差引（収入−支出）</td><td>${fmt(totals.income-totals.expense)}</td><td></td><td></td><td></td><td></td></tr>`;
+  const totRow=(label,o)=>`<tr class="xq-total"><td>${label}</td><td>${fmt(o.t)}</td>${two?`<td>${fmt(o.s)}</td><td>${fmt(o.p)}</td>`:''}<td>${fmt(o.t/selMonths)}</td><td>${selMonths}</td><td></td><td></td></tr>`;
+  if(totals.expense.t)html+=totRow('💸 支出 合計',totals.expense);
+  if(totals.income.t)html+=totRow('💰 収入 合計',totals.income);
+  if(totals.income.t&&totals.expense.t){
+    const d={t:totals.income.t-totals.expense.t,s:totals.income.s-totals.expense.s,p:totals.income.p-totals.expense.p};
+    html+=`<tr class="xq-total"><td>差引（収入−支出）</td><td>${fmt(d.t)}</td>${two?`<td>${fmt(d.s)}</td><td>${fmt(d.p)}</td>`:''}<td></td><td></td><td></td><td></td></tr>`;
+  }
   html+='</tfoot></table>';
+  if(two)html+=`<p style="font-size:10px;color:var(--muted);margin:6px 0 0;line-height:1.5">「${n1}分」「${n2}分」＝各項目の分担設定（折半・比率など）を適用した実質負担額。月平均・最大・最小は総額ベース。</p>`;
   res.innerHTML=html;
 }
 
