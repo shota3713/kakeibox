@@ -1601,9 +1601,9 @@ function openExtract(){
   ps.innerHTML=(persons.length>=2?`<option value="all">全員（全帳簿まとめて）</option>`:'')
     +persons.map(p=>`<option value="${esc(p.id)}"${p.id===state.personId?' selected':''}>${esc(p.name)}の帳簿</option>`).join('');
   document.getElementById('xq-y1').innerHTML=xqYearOpts(state.year);
-  document.getElementById('xq-m1').innerHTML=xqMonthOpts(1);
+  document.getElementById('xq-m1').innerHTML=xqMonthOpts(state.month);
   document.getElementById('xq-y2').innerHTML=xqYearOpts(state.year);
-  document.getElementById('xq-m2').innerHTML=xqMonthOpts(12);
+  document.getElementById('xq-m2').innerHTML=xqMonthOpts(state.month);
   xqChecked=null;
   renderExtract();
   document.getElementById('extract-ov').classList.add('open');
