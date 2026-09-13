@@ -1604,7 +1604,7 @@ function openExtract(){
   document.getElementById('xq-m1').innerHTML=xqMonthOpts(state.month);
   document.getElementById('xq-y2').innerHTML=xqYearOpts(state.year);
   document.getElementById('xq-m2').innerHTML=xqMonthOpts(state.month);
-  xqChecked=null;
+  xqChecked=new Set(); // 初期表示は全クリア
   renderExtract();
   document.getElementById('extract-ov').classList.add('open');
 }
